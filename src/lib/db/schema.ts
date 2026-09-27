@@ -17,6 +17,10 @@ export const invitations = sqliteTable(
     /** Admin override: owners may keep editing until this time even after the event. */
     unlockUntil: integer("unlock_until", { mode: "timestamp" }),
     createdBy: text("created_by"),
+    /** Secret code behind the venue-door QR (separate from the public slug). */
+    checkinCode: text("checkin_code").unique(),
+    /** Whether guests can self check-in by scanning the venue QR. */
+    selfCheckin: integer("self_checkin", { mode: "boolean" }).notNull().default(true),
     createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
     updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
   },
@@ -37,7 +41,8 @@ export const guests = sqliteTable(
     status: text("status", { enum: ["pending", "attending", "declined"] }).notNull().default("pending"),
     attendingCount: integer("attending_count").notNull().default(0),
     note: text("note"),
-    source: text("source", { enum: ["list", "public"] }).notNull().default("list"),
+    /** list: added by hosts · public: RSVP'd via the general link · walkin: checked in at the door without being on the list. */
+    source: text("source", { enum: ["list", "public", "walkin"] }).notNull().default("list"),
     openedAt: integer("opened_at", { mode: "timestamp" }),
     respondedAt: integer("responded_at", { mode: "timestamp" }),
     checkedInAt: integer("checked_in_at", { mode: "timestamp" }),

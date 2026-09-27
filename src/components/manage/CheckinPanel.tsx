@@ -21,11 +21,13 @@ export function CheckinPanel({
   guests,
   setGuests,
   stats,
+  venueQr,
 }: {
   invitationId: string;
   guests: GuestRow[];
   setGuests: React.Dispatch<React.SetStateAction<GuestRow[]>>;
   stats: GuestStats;
+  venueQr?: React.ReactNode;
 }) {
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
@@ -108,6 +110,7 @@ export function CheckinPanel({
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       <div className="space-y-4">
+        {venueQr}
         <div className="card grid grid-cols-2 divide-x divide-line text-center">
           <div className="p-4">
             <div className="text-3xl font-extrabold text-violet-700">{stats.checkedIn}</div>

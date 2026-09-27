@@ -9,6 +9,7 @@ import { Toggle } from "@/components/ui/controls";
 import { GuestsManager, type GuestRow } from "./GuestsManager";
 import { WishesManager, type WishRow } from "./WishesManager";
 import { CheckinPanel } from "./CheckinPanel";
+import { VenueQrCard } from "./VenueQrCard";
 import { CopyButton } from "./CopyButton";
 import { AccessPanel, type Member } from "./AccessPanel";
 import type { Access } from "@/lib/permissions";
@@ -50,6 +51,7 @@ export function ManageDashboard(props: {
   access: Access;
   members: Member[];
   maxGuests: number | null;
+  venueQr: { code: string; enabled: boolean; windowLabel: string } | null;
   initialGuests: GuestRow[];
   initialWishes: WishRow[];
 }) {
@@ -228,7 +230,19 @@ export function ManageDashboard(props: {
 
       {tab === "wishes" && <WishesManager invitationId={id} wishes={wishes} setWishes={setWishes} readOnly={!access.canModerateWishes} />}
 
-      {tab === "checkin" && <CheckinPanel invitationId={id} guests={guests} setGuests={setGuests} stats={stats} />}
+      {tab === "checkin" && (
+        <CheckinPanel
+          invitationId={id}
+          guests={guests}
+          setGuests={setGuests}
+          stats={stats}
+          venueQr={
+            props.venueQr && (
+              <VenueQrCard invitationId={id} origin={origin} initialCode={props.venueQr.code} initialEnabled={props.venueQr.enabled} windowLabel={props.venueQr.windowLabel} />
+            )
+          }
+        />
+      )}
 
       {tab === "access" && <AccessPanel invitationId={id} initialMembers={props.members} initialMaxGuests={props.maxGuests} initialUnlockUntil={access.unlockUntil} lockAt={access.lockAt} />}
 

@@ -18,12 +18,14 @@ export async function POST(req: NextRequest, ctx: RouteContext<"/api/invitations
   const { id } = await ctx.params;
   const auth = await requireAccess(id, "admin");
   if (!auth.ok) return auth.response;
-  const body = await readJson(req, z.object({ username: z.string().trim().toLowerCase().min(1) }));
+  // Members are picked from existing accounts by id — never free-typed names.
+  const body = await readJson(req, z.object({ userId: z.string({ error: "اختر مستخدماً من القائمة" }).trim().min(1, "اختر مستخدماً من القائمة").max(32) }));
   if (!body.ok) return body.response;
   const db = await getDb();
-  const user = await db.query.users.findFirst({ where: eq(schema.users.username, body.data.username) });
-  if (!user) return jsonError("لا يوجد مستخدم بهذا الاسم، أنشئه أولاً من صفحة المستخدمين", 404);
+  const user = await db.query.users.findFirst({ where: eq(schema.users.id, body.data.userId) });
+  if (!user) return jsonError("المستخدم غير موجود", 404);
   if (user.role === "admin") return jsonError("حسابات الإدارة لديها صلاحية على كل الدعوات", 422);
+  if (!user.active) return jsonError("هذا الحساب موقوف، فعّله أولاً من صفحة المستخدمين", 422);
   const members = await listMembers(id);
   if (members.some((m) => m.id === user.id)) return jsonError("هذا المستخدم مضاف مسبقاً", 409);
   if (members.length >= MAX_MEMBERS) return jsonError(`وصلت الدعوة إلى الحد الأقصى للمستخدمين (${MAX_MEMBERS})`, 422);

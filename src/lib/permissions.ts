@@ -89,3 +89,25 @@ export function contentRuleViolation(content: InvitationContent): string | null 
   }
   return null;
 }
+
+/** Self check-in at the door opens this long before an event starts. */
+export const CHECKIN_OPENS_BEFORE_MS = 3 * 3600_000;
+
+export type CheckinWindow = { open: true } | { open: false; reason: "before" | "after"; opensAt?: string };
+
+/**
+ * The venue QR only works on the day: from 3 hours before an event until the
+ * end of that event's day (or its explicit end time, if later).
+ */
+export function selfCheckinWindow(content: InvitationContent, now = Date.now()): CheckinWindow {
+  let nextOpen = Infinity;
+  for (const e of content.events) {
+    const start = zonedToDate(e.startsAt, content.timezone).getTime();
+    const endOfDay = zonedToDate(`${e.startsAt.slice(0, 10)}T23:59`, content.timezone).getTime() + 59_000;
+    const end = Math.max(endOfDay, e.endsAt ? zonedToDate(e.endsAt, content.timezone).getTime() : 0);
+    const opens = start - CHECKIN_OPENS_BEFORE_MS;
+    if (now >= opens && now <= end) return { open: true };
+    if (opens > now) nextOpen = Math.min(nextOpen, opens);
+  }
+  return nextOpen === Infinity ? { open: false, reason: "after" } : { open: false, reason: "before", opensAt: new Date(nextOpen).toISOString() };
+}

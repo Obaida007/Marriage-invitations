@@ -15,6 +15,13 @@
       "when": 1790550460449,
       "tag": "0001_accounts",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1790552229332,
+      "tag": "0002_venue_checkin",
+      "breakpoints": true
     }
   ]
 }

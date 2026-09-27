@@ -18,11 +18,13 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/invitations/
   if (!auth.ok) return auth.response;
   const list = await listGuests(id);
   const origin = req.nextUrl.origin;
-  const header = ["الاسم", "الجوال", "الجهة", "الحالة", "عدد الحضور", "المرافقين المسموح", "ملاحظة", "فتح الدعوة", "تسجيل الدخول", "الرابط الشخصي"];
+  const SOURCE = { list: "القائمة", public: "الرابط العام", walkin: "عند الباب" } as const;
+  const header = ["الاسم", "الجوال", "المصدر", "الجهة", "الحالة", "عدد الحضور", "المرافقين المسموح", "ملاحظة", "فتح الدعوة", "تسجيل الدخول", "الرابط الشخصي"];
   const lines = list.map((g) =>
     [
       g.name,
       g.phone,
+      SOURCE[g.source],
       SIDE[g.side],
       STATUS[g.status],
       g.attendingCount,

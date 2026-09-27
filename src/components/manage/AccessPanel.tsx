@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MAX_MEMBERS } from "@/lib/permissions";
 import { Spinner } from "@/components/ui/controls";
@@ -37,23 +37,38 @@ export function AccessPanel({
 }) {
   const router = useRouter();
   const [members, setMembers] = useState(initialMembers);
-  const [username, setUsername] = useState("");
+  const [accounts, setAccounts] = useState<(Member & { role: string })[] | null>(null);
+  const [query, setQuery] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [maxGuests, setMaxGuests] = useState(initialMaxGuests?.toString() ?? "");
   const [unlockUntil, setUnlockUntil] = useState(toLocalInput(initialUnlockUntil));
   const [saved, setSaved] = useState("");
 
-  async function addMember(e: React.FormEvent) {
-    e.preventDefault();
+  // Members are picked from existing accounts only (no free typing).
+  useEffect(() => {
+    fetch("/api/admin/users")
+      .then((r) => (r.ok ? r.json() : { users: [] }))
+      .then((d) => setAccounts(d.users))
+      .catch(() => setAccounts([]));
+  }, []);
+
+  const candidates = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return (accounts ?? [])
+      .filter((a) => a.role === "owner" && a.active && !members.some((m) => m.id === a.id))
+      .filter((a) => !q || a.username.includes(q) || a.name.toLowerCase().includes(q) || (a.phone ?? "").includes(q));
+  }, [accounts, members, query]);
+
+  async function addMember(userId: string) {
     setBusy(true);
     setError("");
     try {
-      const res = await fetch(`/api/invitations/${invitationId}/members`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ username }) });
+      const res = await fetch(`/api/invitations/${invitationId}/members`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ userId }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setMembers(data.members);
-      setUsername("");
+      setQuery("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "تعذرت الإضافة");
     } finally {
@@ -112,12 +127,43 @@ export function AccessPanel({
           </ul>
         )}
         {members.length < MAX_MEMBERS && (
-          <form onSubmit={addMember} className="flex gap-2">
-            <input className="input" dir="ltr" placeholder="username" value={username} onChange={(e) => setUsername(e.target.value.toLowerCase())} required />
-            <button className="btn-primary shrink-0" disabled={busy}>
-              {busy && <Spinner />} إضافة
-            </button>
-          </form>
+          <div className="space-y-2 rounded-xl border border-line p-3">
+            <span className="text-sm font-bold">اختر مستخدماً لإضافته</span>
+            <input className="input" placeholder="🔍 ابحث بالاسم أو اسم المستخدم أو الجوال" value={query} onChange={(e) => setQuery(e.target.value)} />
+            {accounts === null ? (
+              <p className="text-sm text-stone-500">جارٍ التحميل…</p>
+            ) : candidates.length === 0 ? (
+              <p className="text-sm text-stone-500">{query ? "لا يوجد مستخدم مطابق." : "لا يوجد مستخدمون متاحون."} أنشئ حساباً جديداً من لوحة الإدارة ← المستخدمون.</p>
+            ) : (
+              <ul className="max-h-56 divide-y divide-line overflow-y-auto rounded-lg border border-line" role="listbox" aria-label="المستخدمون المتاحون">
+                {candidates.map((a) => (
+                  <li key={a.id}>
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={false}
+                      disabled={busy}
+                      onClick={() => addMember(a.id)}
+                      className="flex w-full items-center justify-between gap-3 px-3 py-2 text-start hover:bg-soft disabled:opacity-50"
+                    >
+                      <span>
+                        <b className="text-sm">{a.name}</b>{" "}
+                        <span className="font-mono text-xs text-stone-500" dir="ltr">
+                          {a.username}
+                        </span>
+                        {a.phone && (
+                          <span className="ms-2 text-xs text-stone-400" dir="ltr">
+                            {a.phone}
+                          </span>
+                        )}
+                      </span>
+                      <span className="shrink-0 text-xs font-bold text-brand-dark">{busy ? <Spinner /> : "+ إضافة"}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         )}
         {error && <p className="text-sm text-red-600">{error}</p>}
         <p className="text-xs text-stone-500">

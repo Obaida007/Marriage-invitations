@@ -15,7 +15,7 @@ export interface GuestRow {
   status: "pending" | "attending" | "declined";
   attendingCount: number;
   note: string | null;
-  source: "list" | "public";
+  source: "list" | "public" | "walkin";
   openedAt: string | null;
   respondedAt: string | null;
   checkedInAt: string | null;
@@ -282,6 +282,7 @@ export function GuestsManager({
                         {g.status === "attending" && ` · ${g.attendingCount}`}
                       </span>
                       {g.source === "public" && <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[11px] font-bold text-sky-800">من الرابط العام</span>}
+                      {g.source === "walkin" && <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[11px] font-bold text-orange-800">سجّل عند الباب</span>}
                       {g.checkedInAt && <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-bold text-violet-800">✓ حضر</span>}
                     </div>
                     <div className="mt-1 flex flex-wrap gap-x-3 text-xs text-stone-500">

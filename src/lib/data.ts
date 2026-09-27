@@ -147,3 +147,19 @@ export function guestStats(list: (typeof guests.$inferSelect)[]) {
   }
   return s;
 }
+
+export async function getInvitationByCheckinCode(code: string) {
+  const db = await getDb();
+  const row = await db.query.invitations.findFirst({ where: eq(invitations.checkinCode, code) });
+  return row ? { ...row, content: normalizeContent(row.content) } : null;
+}
+
+/** Returns the invitation's venue check-in code, creating one on first use. */
+export async function ensureCheckinCode(inv: { id: string; checkinCode: string | null }) {
+  if (inv.checkinCode) return inv.checkinCode;
+  const { newCheckinCode } = await import("./ids");
+  const code = newCheckinCode();
+  const db = await getDb();
+  await db.update(invitations).set({ checkinCode: code }).where(eq(invitations.id, inv.id));
+  return code;
+}
