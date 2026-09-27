@@ -46,11 +46,13 @@ export function AccessPanel({
   const [saved, setSaved] = useState("");
 
   // Members are picked from existing accounts only (no free typing).
-  useEffect(() => {
+  const loadAccounts = () =>
     fetch("/api/admin/users")
       .then((r) => (r.ok ? r.json() : { users: [] }))
       .then((d) => setAccounts(d.users))
       .catch(() => setAccounts([]));
+  useEffect(() => {
+    loadAccounts();
   }, []);
 
   const candidates = useMemo(() => {
@@ -71,6 +73,8 @@ export function AccessPanel({
       setQuery("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "تعذرت الإضافة");
+      // The list may be stale (account deleted or deactivated in another tab).
+      loadAccounts();
     } finally {
       setBusy(false);
     }
