@@ -1,4 +1,31 @@
-import type { InvitationContent } from "./invitation-schema";
+import { SECTION_IDS, type InvitationContent, type ThemeId } from "./invitation-schema";
+import { THEMES } from "./themes";
+
+/** A clean style for a theme: every shape/color override reset to "inherit". */
+export function defaultStyle(themeId: ThemeId = "royal-gold"): InvitationContent["style"] {
+  const th = THEMES[themeId];
+  return {
+    theme: th.id,
+    accent: "",
+    colors: {},
+    headingFont: th.headingFont,
+    bodyFont: th.bodyFont,
+    headingScale: "md",
+    ornament: "",
+    pattern: "",
+    radius: "",
+    frame: "",
+    coverShape: "",
+    corners: true,
+    animation: "fade",
+    envelope: true,
+    petals: true,
+    particle: "",
+    heroTone: "auto",
+    heroOverlay: 55,
+    heroBlur: 0,
+  };
+}
 
 function inDays(days: number, time = "20:00") {
   const d = new Date(Date.now() + days * 86400000);
@@ -15,6 +42,9 @@ export function defaultContent(): InvitationContent {
       brideFamily: "كريمة السيد / خالد إبراهيم",
       brideFirst: false,
       hideBrideName: false,
+      groomTitle: "",
+      brideTitle: "",
+      titlesInline: false,
     },
     texts: {
       opening: "quran-rum",
@@ -22,6 +52,7 @@ export function defaultContent(): InvitationContent {
       hosts: "يتشرف آل عبدالله وآل إبراهيم",
       invitationLine: "بدعوتكم لحضور حفل زفاف أبنائهم، وبحضوركم تكتمل فرحتنا",
       closing: "دمتم ودامت أفراحكم عامرة",
+      sectionTitles: {},
     },
     events: [
       {
@@ -43,15 +74,9 @@ export function defaultContent(): InvitationContent {
       { id: "p3", time: "11:00 م", title: "العشاء", icon: "dinner" },
     ],
     notes: ["نعتذر عن اصطحاب الأطفال", "يُرجى عدم التصوير داخل القاعة"],
-    media: { coverImage: "", gallery: [], musicUrl: "" },
-    style: {
-      theme: "royal-gold",
-      accent: "",
-      headingFont: "aref-ruqaa",
-      bodyFont: "amiri",
-      envelope: true,
-      petals: true,
-    },
+    media: { coverImage: "", heroBackground: "", gallery: [], musicUrl: "" },
+    style: defaultStyle("royal-gold"),
+    sections: [...SECTION_IDS],
     features: {
       countdown: true,
       hijriDate: true,

@@ -17,10 +17,10 @@ async function compressImage(file: File, maxSize = 1600, quality = 0.85): Promis
   );
 }
 
-export async function uploadFile(file: File, kind: "image" | "audio"): Promise<string> {
+export async function uploadFile(file: File, kind: "image" | "audio", maxSize = 1600): Promise<string> {
   const body = new FormData();
   if (kind === "image") {
-    body.append("file", await compressImage(file), "image.jpg");
+    body.append("file", await compressImage(file, maxSize), "image.jpg");
   } else {
     body.append("file", file);
   }

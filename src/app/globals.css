@@ -102,18 +102,20 @@ body {
   .inv-card {
     background: var(--inv-surface);
     border: 1px solid var(--inv-border);
-    border-radius: 1.5rem;
+    border-radius: var(--inv-radius, 1.5rem);
     box-shadow: 0 10px 40px -20px color-mix(in srgb, var(--inv-accent) 45%, transparent);
   }
 
   .inv-btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-[15px] font-bold transition active:scale-[.97] disabled:opacity-60;
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 text-[15px] font-bold transition active:scale-[.97] disabled:opacity-60;
+    border-radius: var(--inv-btn-radius, 9999px);
     font-family: var(--f-cairo), sans-serif;
     background: var(--inv-accent);
     color: var(--inv-surface);
   }
   .inv-btn-outline {
-    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-[15px] font-bold transition active:scale-[.97];
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 text-[15px] font-bold transition active:scale-[.97];
+    border-radius: var(--inv-btn-radius, 9999px);
     font-family: var(--f-cairo), sans-serif;
     border: 1.5px solid var(--inv-accent);
     color: var(--inv-accent);
@@ -123,7 +125,8 @@ body {
   }
 
   .inv-input {
-    @apply w-full rounded-2xl px-4 py-3 text-[15px] outline-none transition;
+    border-radius: var(--inv-radius-sm, 1rem);
+    @apply w-full px-4 py-3 text-[15px] outline-none transition;
     font-family: var(--f-cairo), sans-serif;
     background: var(--inv-bg);
     border: 1px solid var(--inv-border);
@@ -155,14 +158,23 @@ body {
   }
 }
 
-/* Falling petals */
+/* Falling particles */
 .petal {
   position: absolute;
   top: -5%;
-  border-radius: 150% 0 150% 0;
-  background: color-mix(in srgb, var(--inv-accent) 55%, white);
   opacity: 0.55;
   animation: petal-fall linear infinite;
+  color: color-mix(in srgb, var(--inv-accent) 60%, white);
+}
+.petal[data-shape="petals"] {
+  border-radius: 150% 0 150% 0;
+  background: currentColor;
+}
+.petal[data-shape="sparkles"] {
+  border-radius: 9999px;
+  background: currentColor;
+  box-shadow: 0 0 8px 2px currentColor;
+  opacity: 0.7;
 }
 @keyframes petal-fall {
   0% {

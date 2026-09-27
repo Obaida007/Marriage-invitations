@@ -4,20 +4,19 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   EVENT_ICONS,
-  FONT_IDS,
   OPENING_PRESETS,
   invitationContentSchema,
   type InvitationContent,
   type InvitationEvent,
 } from "@/lib/invitation-schema";
-import { THEME_LIST, THEMES } from "@/lib/themes";
-import { FONTS } from "@/lib/fonts-meta";
 import { OPENING_LABELS } from "@/lib/i18n";
 import { suggestSlug } from "@/lib/slug";
 import { uploadFile } from "@/lib/upload";
 import { InvitationView } from "@/components/invitation/InvitationView";
 import { Icon } from "@/components/invitation/Ornaments";
 import { Field, Panel, Spinner, Toggle } from "@/components/ui/controls";
+import { DesignPanel, Segmented } from "./DesignPanel";
+import { SectionsPanel } from "./SectionsPanel";
 
 const TIMEZONES: [string, string][] = [
   ["Asia/Riyadh", "السعودية"],
@@ -57,6 +56,9 @@ const ICON_LABELS: Record<(typeof EVENT_ICONS)[number], string> = {
   heart: "قلب",
   moon: "ليل",
 };
+
+const GROOM_TITLES = ["المهندس", "الدكتور", "الطبيب", "الأستاذ", "المحامي", "الصيدلي", "الطيار", "الضابط", "النقيب", "الملازم", "الشيخ", "المستشار", "الأستاذ الدكتور", "م.", "د.", "أ."];
+const BRIDE_TITLES = ["المهندسة", "الدكتورة", "الطبيبة", "الأستاذة", "المحامية", "الصيدلانية", "المعلمة", "المستشارة", "الأستاذة الدكتورة", "م.", "د.", "أ."];
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
@@ -201,6 +203,27 @@ export function InvitationEditor({
               <input className="input" value={couple.brideFamily} maxLength={120} onChange={(e) => patch((c) => void (c.couple.brideFamily = e.target.value))} />
             </Field>
           </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="لقب العريس (اختياري)" hint="اختر من القائمة أو اكتب لقباً مخصصاً">
+              <input className="input" list="groom-titles" placeholder="بدون لقب" value={couple.groomTitle} maxLength={40} onChange={(e) => patch((c) => void (c.couple.groomTitle = e.target.value))} />
+            </Field>
+            <Field label="لقب العروس (اختياري)">
+              <input className="input" list="bride-titles" placeholder="بدون لقب" value={couple.brideTitle} maxLength={40} onChange={(e) => patch((c) => void (c.couple.brideTitle = e.target.value))} />
+            </Field>
+          </div>
+          <datalist id="groom-titles">
+            {GROOM_TITLES.map((x) => (
+              <option key={x} value={x} />
+            ))}
+          </datalist>
+          <datalist id="bride-titles">
+            {BRIDE_TITLES.map((x) => (
+              <option key={x} value={x} />
+            ))}
+          </datalist>
+          {(couple.groomTitle || couple.brideTitle) && (
+            <Toggle label="اللقب بجانب الاسم" hint="بدلاً من إظهاره في سطر صغير فوق الاسم" checked={couple.titlesInline} onChange={(v) => patch((c) => void (c.couple.titlesInline = v))} />
+          )}
           <Toggle label="إظهار اسم العروس أولاً" checked={couple.brideFirst} onChange={(v) => patch((c) => void (c.couple.brideFirst = v))} />
           <Toggle label="إخفاء اسم العروس" hint="يُعرض الحرف الأول فقط، تقديراً للخصوصية" checked={couple.hideBrideName} onChange={(v) => patch((c) => void (c.couple.hideBrideName = v))} />
         </Panel>
@@ -299,78 +322,30 @@ export function InvitationEditor({
           )}
         </Panel>
 
-        <Panel title="التصميم" icon="🎨" defaultOpen={mode === "create"}>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {THEME_LIST.map((th) => (
-              <button
-                key={th.id}
-                type="button"
-                onClick={() =>
-                  patch((c) => {
-                    c.style.theme = th.id;
-                    c.style.accent = "";
-                    if (c.locale === "ar") {
-                      c.style.headingFont = th.headingFont;
-                      c.style.bodyFont = th.bodyFont;
-                    }
-                  })
-                }
-                className={`overflow-hidden rounded-2xl border-2 text-start transition ${style.theme === th.id ? "border-brand ring-4 ring-brand/15" : "border-line hover:border-stone-300"}`}
-              >
-                <div className="flex h-16 items-center justify-center gap-1.5" style={{ background: th.colors.bg }}>
-                  {[th.colors.accent, th.colors.seal, th.colors.border].map((col, i) => (
-                    <span key={i} className="h-6 w-6 rounded-full ring-2 ring-white/60" style={{ background: col }} />
-                  ))}
-                </div>
-                <div className="bg-white px-3 py-2">
-                  <div className="text-sm font-bold">{th.name}</div>
-                  <div className="truncate text-[11px] text-stone-500">{th.description}</div>
-                </div>
-              </button>
-            ))}
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="لون مخصص (اختياري)">
-              <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  className="h-11 w-14 shrink-0 cursor-pointer rounded-xl border border-line bg-white p-1"
-                  value={style.accent || THEMES[style.theme].colors.accent}
-                  onChange={(e) => patch((c) => void (c.style.accent = e.target.value))}
-                />
-                {style.accent && (
-                  <button type="button" className="text-sm text-stone-500 underline" onClick={() => patch((c) => void (c.style.accent = ""))}>
-                    استعادة لون القالب
-                  </button>
-                )}
-              </div>
-            </Field>
-            <Field label="لغة الدعوة">
-              <select
-                className="input"
-                value={content.locale}
-                onChange={(e) =>
-                  patch((c) => {
-                    c.locale = e.target.value as "ar" | "en";
-                    const th = THEMES[c.style.theme];
-                    c.style.headingFont = c.locale === "en" ? "playfair" : th.headingFont;
-                    c.style.bodyFont = c.locale === "en" ? "playfair" : th.bodyFont;
-                  })
-                }
-              >
-                <option value="ar">العربية</option>
-                <option value="en">English</option>
-              </select>
-            </Field>
-            <FontSelect label="خط العناوين والأسماء" value={style.headingFont} onChange={(v) => patch((c) => void (c.style.headingFont = v))} />
-            <FontSelect label="خط النصوص" value={style.bodyFont} onChange={(v) => patch((c) => void (c.style.bodyFont = v))} />
-          </div>
-          <Toggle label="ظرف افتتاحي متحرك" hint="يفتح الضيف الظرف ليرى الدعوة، ويبدأ تشغيل الموسيقى" checked={style.envelope} onChange={(v) => patch((c) => void (c.style.envelope = v))} />
-          <Toggle label="بتلات متساقطة" checked={style.petals} onChange={(v) => patch((c) => void (c.style.petals = v))} />
-        </Panel>
+        <DesignPanel content={content} patch={patch} defaultOpen={mode === "create"} />
 
-        <Panel title="الصور والموسيقى" icon="🖼️">
-          <Field label="صورة الغلاف (اختياري)">
+        <Panel title="الصور والموسيقى" icon="🖼️" defaultOpen={mode === "create"}>
+          <Field label="صورة خلفية القسم الأول (اختياري)" hint="تملأ خلفية الشاشة الأولى خلف الأسماء — صورة القاعة أو الورود أو صورة للعروسين">
+            <MediaInput kind="image" maxSize={2000} value={media.heroBackground} onChange={(v) => patch((c) => void (c.media.heroBackground = v))} />
+          </Field>
+          {media.heroBackground && (
+            <div className="space-y-4 rounded-2xl bg-soft/60 p-4">
+              <Segmented
+                label="لون النص فوق الصورة"
+                options={["auto", "light", "dark"] as const}
+                labels={{ auto: "ألوان القالب", light: "نص فاتح (طبقة داكنة)", dark: "نص داكن (طبقة فاتحة)" }}
+                value={style.heroTone}
+                onChange={(v) => patch((c) => void (c.style.heroTone = v))}
+              />
+              <Field label={`شفافية الطبقة فوق الصورة: ${style.heroOverlay}%`} hint="زِدها إذا كانت الأسماء غير واضحة">
+                <input type="range" min={0} max={95} step={5} className="w-full accent-[var(--brand)]" value={style.heroOverlay} onChange={(e) => patch((c) => void (c.style.heroOverlay = Number(e.target.value)))} />
+              </Field>
+              <Field label={`تمويه الصورة: ${style.heroBlur}px`}>
+                <input type="range" min={0} max={12} step={1} className="w-full accent-[var(--brand)]" value={style.heroBlur} onChange={(e) => patch((c) => void (c.style.heroBlur = Number(e.target.value)))} />
+              </Field>
+            </div>
+          )}
+          <Field label="صورة الغلاف (اختياري)" hint="صورة داخل إطار (قوس أو دائرة…) فوق الأسماء">
             <MediaInput kind="image" value={media.coverImage} onChange={(v) => patch((c) => void (c.media.coverImage = v))} />
           </Field>
           <div>
@@ -472,6 +447,8 @@ export function InvitationEditor({
             </Field>
           </div>
         </Panel>
+
+        <SectionsPanel content={content} patch={patch} />
 
         <Panel title="رابط الدعوة" icon="🔗" defaultOpen={mode === "create"}>
           <Field label="الرابط المخصص" hint="أحرف إنجليزية صغيرة وأرقام وشرطات">
@@ -588,21 +565,7 @@ function EventEditor({
   );
 }
 
-function FontSelect({ label, value, onChange }: { label: string; value: (typeof FONT_IDS)[number]; onChange: (v: (typeof FONT_IDS)[number]) => void }) {
-  return (
-    <Field label={label}>
-      <select className="input text-lg" style={{ fontFamily: FONTS[value].cssVar }} value={value} onChange={(e) => onChange(e.target.value as (typeof FONT_IDS)[number])}>
-        {FONT_IDS.map((f) => (
-          <option key={f} value={f} style={{ fontFamily: FONTS[f].cssVar }}>
-            {FONTS[f].label} — {FONTS[f].sample}
-          </option>
-        ))}
-      </select>
-    </Field>
-  );
-}
-
-function MediaInput({ kind, value, onChange }: { kind: "image" | "audio"; value: string; onChange: (v: string) => void }) {
+function MediaInput({ kind, value, onChange, maxSize }: { kind: "image" | "audio"; value: string; onChange: (v: string) => void; maxSize?: number }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const ref = useRef<HTMLInputElement>(null);
@@ -612,7 +575,7 @@ function MediaInput({ kind, value, onChange }: { kind: "image" | "audio"; value:
     setBusy(true);
     setError("");
     try {
-      onChange(await uploadFile(file, kind));
+      onChange(await uploadFile(file, kind, maxSize));
     } catch (e) {
       setError(e instanceof Error ? e.message : "فشل الرفع");
     } finally {

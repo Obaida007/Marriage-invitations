@@ -65,7 +65,7 @@ export function WishesSection({
   return (
     <div className="space-y-6">
       {sent ? (
-        <p className="rounded-2xl bg-inv-accent-soft p-4 text-center font-sans text-inv-accent">{d.wishThanks}</p>
+        <p className="rounded-[var(--inv-radius-sm)] bg-inv-accent-soft p-4 text-center font-sans text-inv-accent">{d.wishThanks}</p>
       ) : (
         <form onSubmit={submit} className="space-y-3 font-sans">
           <input className="inv-input" placeholder={d.yourName} value={name} onChange={(e) => setName(e.target.value)} required minLength={2} maxLength={80} />
@@ -81,7 +81,7 @@ export function WishesSection({
       ) : (
         <ul className="space-y-3">
           {visible.map((w) => (
-            <li key={w.id} className="rounded-2xl border border-inv-border bg-inv-bg p-4">
+            <li key={w.id} className="rounded-[var(--inv-radius-sm)] border border-inv-border bg-inv-bg p-4">
               <p className="whitespace-pre-line font-body text-lg leading-relaxed">{w.message}</p>
               <p className="mt-2 font-sans text-sm font-bold text-inv-accent">— {w.name}</p>
             </li>

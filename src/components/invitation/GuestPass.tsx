@@ -32,10 +32,10 @@ export function GuestPass({
   }, [url]);
 
   return (
-    <div className="mx-auto max-w-xs rounded-3xl border-2 border-dashed border-inv-accent/60 bg-inv-bg p-5 text-center">
+    <div className="mx-auto max-w-xs rounded-[var(--inv-radius)] border-2 border-dashed border-inv-accent/60 bg-inv-bg p-5 text-center">
       <p className="font-heading text-xl text-inv-accent">{d.passTitle}</p>
       <p className="mt-1 font-body text-lg">{name}</p>
-      <div className="mx-auto mt-3 aspect-square w-48 overflow-hidden rounded-2xl bg-white p-2">
+      <div className="mx-auto mt-3 aspect-square w-48 overflow-hidden rounded-[var(--inv-radius-sm)] bg-white p-2">
         {/* eslint-disable-next-line @next/next/no-img-element -- data URL */}
         {src && <img src={src} alt={`QR ${token}`} className="h-full w-full" />}
       </div>

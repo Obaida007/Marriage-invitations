@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import Link from "next/link";
 import { InvitationView } from "@/components/invitation/InvitationView";
-import { defaultContent } from "@/lib/defaults";
+import { defaultContent, defaultStyle } from "@/lib/defaults";
 import { THEMES } from "@/lib/themes";
 import { THEME_IDS, type ThemeId } from "@/lib/invitation-schema";
 
@@ -15,7 +15,9 @@ export default async function DemoPage(props: PageProps<"/demo/[theme]">) {
   if (!(THEME_IDS as readonly string[]).includes(theme)) notFound();
   const th = THEMES[theme as ThemeId];
   const content = defaultContent();
-  content.style = { ...content.style, theme: th.id, headingFont: th.headingFont, bodyFont: th.bodyFont };
+  content.style = defaultStyle(th.id);
+  content.couple.groomTitle = "المهندس";
+  content.couple.brideTitle = "الدكتورة";
   content.media.gallery = [];
 
   return (

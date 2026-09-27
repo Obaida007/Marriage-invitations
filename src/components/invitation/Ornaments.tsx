@@ -1,4 +1,16 @@
+import { useId } from "react";
 import type { Ornament } from "@/lib/themes";
+import type { PatternId } from "@/lib/invitation-schema";
+
+/** Points of an 8-pointed star (two overlapping squares) centered at cx,cy. */
+function star8(cx: number, cy: number, r: number) {
+  const inner = r * 0.62;
+  return Array.from({ length: 16 }, (_, i) => {
+    const a = (Math.PI / 8) * i - Math.PI / 2;
+    const rad = i % 2 ? inner : r;
+    return `${(cx + rad * Math.cos(a)).toFixed(2)},${(cy + rad * Math.sin(a)).toFixed(2)}`;
+  }).join(" ");
+}
 
 /** Decorative section divider, drawn in the theme accent color. */
 export function Divider({ ornament, className = "" }: { ornament: Ornament; className?: string }) {
@@ -43,6 +55,16 @@ export function Divider({ ornament, className = "" }: { ornament: Ornament; clas
             ))}
             <circle cx="120" cy="16" r="3" />
           </g>
+        </svg>
+      );
+    case "stars":
+      return (
+        <svg {...common}>
+          <path d="M10 16h84M146 16h84" stroke="currentColor" strokeWidth="1" />
+          <polygon points={star8(120, 16, 13)} stroke="currentColor" strokeWidth="1.2" />
+          <polygon points={star8(120, 16, 6)} fill="currentColor" />
+          <polygon points={star8(102, 16, 4)} fill="currentColor" />
+          <polygon points={star8(138, 16, 4)} fill="currentColor" />
         </svg>
       );
     case "line":
@@ -116,34 +138,90 @@ export function Corner({ ornament, className = "" }: { ornament: Ornament; class
         <path d="M10 10c14 0 22 8 22 22-14 0-22-8-22-22z" />
         <circle cx="32" cy="32" r="2.5" fill="currentColor" />
         {ornament === "geometric" && <rect x="44" y="44" width="10" height="10" transform="rotate(45 49 49)" />}
+        {ornament === "stars" && <polygon points={star8(50, 50, 9)} />}
       </g>
     </svg>
   );
 }
 
 /** Subtle repeating background pattern for the page. */
-export function Pattern({ ornament }: { ornament: Ornament }) {
-  if (ornament === "line" || ornament === "dunes") return null;
-  const id = `pat-${ornament}`;
+export function Pattern({ pattern, opacity = 0.07 }: { pattern: PatternId; opacity?: number }) {
+  const id = `pat-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
+  if (pattern === "none") return null;
+  const tiles: Record<Exclude<PatternId, "none">, { size: number; node: React.ReactNode }> = {
+    floral: {
+      size: 56,
+      node: (
+        <g fill="currentColor">
+          <circle cx="28" cy="28" r="2" />
+          <ellipse cx="28" cy="20" rx="2.5" ry="5" />
+          <ellipse cx="28" cy="36" rx="2.5" ry="5" />
+          <ellipse cx="20" cy="28" rx="5" ry="2.5" />
+          <ellipse cx="36" cy="28" rx="5" ry="2.5" />
+        </g>
+      ),
+    },
+    geometric: {
+      size: 56,
+      node: (
+        <g stroke="currentColor" fill="none" strokeWidth="1">
+          <rect x="16" y="16" width="24" height="24" />
+          <rect x="16" y="16" width="24" height="24" transform="rotate(45 28 28)" />
+          <circle cx="28" cy="28" r="5" />
+        </g>
+      ),
+    },
+    arabesque: {
+      size: 64,
+      node: (
+        <g stroke="currentColor" fill="none" strokeWidth="1">
+          <path d="M32 4c10 10 10 18 0 28-10-10-10-18 0-28zM32 60c10-10 10-18 0-28-10 10-10 18 0 28zM4 32c10-10 18-10 28 0-10 10-18 10-28 0zM60 32c-10-10-18-10-28 0 10 10 18 10 28 0z" />
+          <circle cx="32" cy="32" r="3" fill="currentColor" />
+        </g>
+      ),
+    },
+    stars: {
+      size: 60,
+      node: (
+        <g stroke="currentColor" fill="none" strokeWidth="1">
+          <polygon points={star8(30, 30, 16)} />
+          <polygon points={star8(30, 30, 7)} fill="currentColor" />
+          <polygon points={star8(0, 0, 7)} />
+          <polygon points={star8(60, 0, 7)} />
+          <polygon points={star8(0, 60, 7)} />
+          <polygon points={star8(60, 60, 7)} />
+        </g>
+      ),
+    },
+    lattice: {
+      size: 40,
+      node: (
+        <g stroke="currentColor" fill="none" strokeWidth="1">
+          <path d="M0 20L20 0l20 20-20 20z" />
+          <circle cx="20" cy="20" r="6" />
+          <circle cx="0" cy="0" r="6" />
+          <circle cx="40" cy="0" r="6" />
+          <circle cx="0" cy="40" r="6" />
+          <circle cx="40" cy="40" r="6" />
+        </g>
+      ),
+    },
+    dots: {
+      size: 28,
+      node: (
+        <g fill="currentColor">
+          <circle cx="7" cy="7" r="1.6" />
+          <circle cx="21" cy="21" r="1.6" />
+        </g>
+      ),
+    },
+  };
+  const tile = tiles[pattern] ?? tiles.geometric;
   return (
-    <svg className="pointer-events-none absolute inset-0 h-full w-full text-inv-accent opacity-[.07]" aria-hidden>
+    <svg className="pointer-events-none absolute inset-0 h-full w-full text-inv-accent" style={{ opacity }} aria-hidden>
       <defs>
-        <pattern id={id} width="56" height="56" patternUnits="userSpaceOnUse">
-          {ornament === "floral" || ornament === "leaves" ? (
-            <g fill="currentColor">
-              <circle cx="28" cy="28" r="2" />
-              <ellipse cx="28" cy="20" rx="2.5" ry="5" />
-              <ellipse cx="28" cy="36" rx="2.5" ry="5" />
-              <ellipse cx="20" cy="28" rx="5" ry="2.5" />
-              <ellipse cx="36" cy="28" rx="5" ry="2.5" />
-            </g>
-          ) : (
-            <g stroke="currentColor" fill="none" strokeWidth="1">
-              <rect x="16" y="16" width="24" height="24" />
-              <rect x="16" y="16" width="24" height="24" transform="rotate(45 28 28)" />
-              <circle cx="28" cy="28" r="5" />
-            </g>
-          )}
+        <pattern id={id} width={tile.size} height={tile.size} patternUnits="userSpaceOnUse">
+          {tile.node}
         </pattern>
       </defs>
       <rect width="100%" height="100%" fill={`url(#${id})`} />

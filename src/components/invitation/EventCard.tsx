@@ -92,7 +92,7 @@ export function EventCard({
               <summary className="inv-btn-outline cursor-pointer list-none [&::-webkit-details-marker]:hidden">
                 <Icon name="calendar" className="h-4 w-4" /> {d.addToCalendar}
               </summary>
-              <div className="absolute left-1/2 z-20 mt-2 w-52 -translate-x-1/2 overflow-hidden rounded-2xl border border-inv-border bg-inv-surface font-sans text-sm shadow-xl">
+              <div className="absolute left-1/2 z-20 mt-2 w-52 -translate-x-1/2 overflow-hidden rounded-[var(--inv-radius-sm)] border border-inv-border bg-inv-surface font-sans text-sm shadow-xl">
                 <a className="block px-4 py-3 hover:bg-inv-accent-soft" target="_blank" rel="noopener noreferrer" href={googleCalendarUrl(event, timezone, calendarTitle, calendarDetails)}>
                   {d.googleCalendar}
                 </a>

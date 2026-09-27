@@ -128,7 +128,7 @@ export function RsvpSection({
         <input className="inv-input" placeholder={d.phone} value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" autoComplete="tel" maxLength={30} dir="ltr" style={{ textAlign: locale === "ar" ? "right" : "left" }} />
       )}
       {status === "attending" && max > 1 && (
-        <div className="flex items-center justify-between gap-3 rounded-2xl border border-inv-border bg-inv-bg px-4 py-2.5">
+        <div className="flex items-center justify-between gap-3 rounded-[var(--inv-radius-sm)] border border-inv-border bg-inv-bg px-4 py-2.5">
           <span className="text-sm">
             {d.companions}
             <span className="block text-xs text-inv-muted">

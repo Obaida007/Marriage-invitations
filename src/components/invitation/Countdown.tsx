@@ -28,7 +28,7 @@ export function Countdown({ target, locale, d }: { target: number; locale: "ar" 
   return (
     <div className="grid grid-cols-4 gap-2 sm:gap-3" role="timer" aria-live="off">
       {parts.map((p) => (
-        <div key={p.l} className="rounded-2xl border border-inv-border bg-inv-bg px-1 py-3 text-center">
+        <div key={p.l} className="rounded-[var(--inv-radius-sm)] border border-inv-border bg-inv-bg px-1 py-3 text-center">
           <div className="font-heading text-3xl tabular-nums text-inv-accent sm:text-4xl">
             {p.v === null ? "–" : formatNumber(p.v, locale)}
           </div>

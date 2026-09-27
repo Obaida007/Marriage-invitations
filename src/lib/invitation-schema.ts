@@ -8,8 +8,59 @@ const optionalUrl = z
   .refine((v) => v === "" || v.startsWith("/") || /^https?:\/\//i.test(v), "رابط غير صالح")
   .default("");
 
-export const THEME_IDS = ["royal-gold", "blush-floral", "night-royal", "olive-garden", "modern-minimal", "desert-sand"] as const;
-export const FONT_IDS = ["amiri", "aref-ruqaa", "reem-kufi", "el-messiri", "lateef", "cairo", "tajawal", "playfair"] as const;
+export const THEME_IDS = [
+  "royal-gold",
+  "blush-floral",
+  "night-royal",
+  "olive-garden",
+  "modern-minimal",
+  "desert-sand",
+  "emerald-palace",
+  "burgundy-velvet",
+  "lavender-dream",
+  "andalusian-turquoise",
+  "rose-gold",
+  "black-gold",
+  "pearl-blue",
+  "damascene-rose",
+  "moroccan-terracotta",
+] as const;
+export const FONT_IDS = [
+  "amiri",
+  "aref-ruqaa",
+  "reem-kufi",
+  "el-messiri",
+  "lateef",
+  "cairo",
+  "tajawal",
+  "rakkas",
+  "mirza",
+  "scheherazade",
+  "noto-kufi",
+  "almarai",
+  "changa",
+  "playfair",
+  "cormorant",
+  "great-vibes",
+] as const;
+export const ORNAMENTS = ["arabesque", "floral", "geometric", "leaves", "stars", "line", "dunes"] as const;
+export const PATTERNS = ["none", "arabesque", "floral", "geometric", "stars", "lattice", "dots"] as const;
+export const RADII = ["sharp", "soft", "round"] as const;
+export const FRAMES = ["none", "single", "double"] as const;
+export const COVER_SHAPES = ["arch", "circle", "rounded", "square"] as const;
+export const PARTICLES = ["petals", "hearts", "stars", "sparkles"] as const;
+export const HEADING_SCALES = ["sm", "md", "lg", "xl"] as const;
+export const ANIMATIONS = ["fade", "slide", "zoom", "none"] as const;
+export const HERO_TONES = ["auto", "light", "dark"] as const;
+export const SECTION_IDS = ["countdown", "events", "program", "gallery", "notes", "rsvp", "wishes"] as const;
+export const COLOR_KEYS = ["bg", "surface", "text", "muted", "accent", "border", "envelope", "seal"] as const;
+
+const hex = z
+  .string()
+  .regex(/^(#[0-9a-fA-F]{6})?$/)
+  .default("");
+/** "" means "inherit from the selected theme". */
+const orInherit = <T extends readonly [string, ...string[]]>(values: T) => z.enum(values).or(z.literal("")).default("");
 export const OPENING_PRESETS = ["bismillah", "quran-rum", "quran-naba", "none", "custom"] as const;
 export const EVENT_ICONS = ["rings", "hall", "dinner", "music", "camera", "cake", "car", "heart", "moon"] as const;
 
@@ -50,6 +101,11 @@ export const invitationContentSchema = z.object({
     brideFirst: z.boolean().default(false),
     /** Hide the bride's name and show only initials (a common conservative preference). */
     hideBrideName: z.boolean().default(false),
+    /** Optional honorifics, e.g. "المهندس" / "الدكتورة". */
+    groomTitle: str(40).default(""),
+    brideTitle: str(40).default(""),
+    /** Show titles on the same line as the name instead of above it. */
+    titlesInline: z.boolean().default(false),
   }),
 
   texts: z.object({
@@ -58,6 +114,8 @@ export const invitationContentSchema = z.object({
     hosts: str(300).default(""),
     invitationLine: str(500).default(""),
     closing: str(300).default(""),
+    /** Custom section headings; empty values fall back to the defaults. */
+    sectionTitles: z.partialRecord(z.enum(SECTION_IDS), str(60)).default({}),
   }),
 
   events: z.array(eventSchema).min(1, "أضف حفلاً واحداً على الأقل").max(6),
@@ -66,21 +124,38 @@ export const invitationContentSchema = z.object({
 
   media: z.object({
     coverImage: optionalUrl,
+    /** Full-bleed background image for the first (hero) section. */
+    heroBackground: optionalUrl,
     gallery: z.array(optionalUrl).max(12).default([]),
     musicUrl: optionalUrl,
   }),
 
   style: z.object({
     theme: z.enum(THEME_IDS).default("royal-gold"),
-    accent: z
-      .string()
-      .regex(/^(#[0-9a-fA-F]{6})?$/)
-      .default(""),
+    /** Legacy accent override; `colors.accent` takes precedence. */
+    accent: hex,
+    /** Per-color overrides of the theme palette. */
+    colors: z.partialRecord(z.enum(COLOR_KEYS), hex).default({}),
     headingFont: z.enum(FONT_IDS).default("aref-ruqaa"),
     bodyFont: z.enum(FONT_IDS).default("amiri"),
+    headingScale: z.enum(HEADING_SCALES).default("md"),
+    ornament: orInherit(ORNAMENTS),
+    pattern: orInherit(PATTERNS),
+    radius: orInherit(RADII),
+    frame: orInherit(FRAMES),
+    coverShape: orInherit(COVER_SHAPES),
+    corners: z.boolean().default(true),
+    animation: z.enum(ANIMATIONS).default("fade"),
     envelope: z.boolean().default(true),
     petals: z.boolean().default(true),
+    particle: orInherit(PARTICLES),
+    heroTone: z.enum(HERO_TONES).default("auto"),
+    /** Overlay opacity over the hero background image, 0–95 (%). */
+    heroOverlay: z.number().int().min(0).max(95).default(55),
+    heroBlur: z.number().int().min(0).max(12).default(0),
   }),
+
+  sections: z.array(z.enum(SECTION_IDS)).max(SECTION_IDS.length).default([...SECTION_IDS]),
 
   features: z.object({
     countdown: z.boolean().default(true),
@@ -119,6 +194,11 @@ export type InvitationEvent = z.infer<typeof eventSchema>;
 export type ProgramItem = z.infer<typeof programItemSchema>;
 export type ThemeId = (typeof THEME_IDS)[number];
 export type FontId = (typeof FONT_IDS)[number];
+export type OrnamentId = (typeof ORNAMENTS)[number];
+export type PatternId = (typeof PATTERNS)[number];
+export type SectionId = (typeof SECTION_IDS)[number];
+export type ColorKey = (typeof COLOR_KEYS)[number];
+export type InvitationStyle = InvitationContent["style"];
 
 export const slugSchema = z
   .string()

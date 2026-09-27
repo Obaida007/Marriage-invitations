@@ -3,8 +3,7 @@ import { connection } from "next/server";
 import Link from "next/link";
 import { InvitationEditor } from "@/components/editor/InvitationEditor";
 import { SiteHeader } from "@/components/ui/SiteHeader";
-import { defaultContent } from "@/lib/defaults";
-import { THEMES } from "@/lib/themes";
+import { defaultContent, defaultStyle } from "@/lib/defaults";
 import { THEME_IDS, type ThemeId } from "@/lib/invitation-schema";
 
 export const metadata: Metadata = { title: "إنشاء دعوة جديدة" };
@@ -14,10 +13,7 @@ export default async function CreatePage(props: PageProps<"/create">) {
   const { theme } = await props.searchParams;
   const content = defaultContent();
   if (typeof theme === "string" && (THEME_IDS as readonly string[]).includes(theme)) {
-    const th = THEMES[theme as ThemeId];
-    content.style.theme = th.id;
-    content.style.headingFont = th.headingFont;
-    content.style.bodyFont = th.bodyFont;
+    content.style = defaultStyle(theme as ThemeId);
   }
   return (
     <>

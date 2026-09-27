@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { eq } from "drizzle-orm";
 import { getInvitationBySlug } from "@/lib/data";
 import { getDb, schema } from "@/lib/db";
-import { THEMES } from "@/lib/themes";
+import { resolveStyle } from "@/lib/themes";
 import { shapeArabic } from "@/lib/arabic-shaping";
 import { formatGregorian } from "@/lib/dates";
 
@@ -39,8 +39,9 @@ export default async function Image({ params }: { params: Promise<{ slug: string
   }
 
   const c = inv.content;
-  const theme = THEMES[c.style.theme] ?? THEMES["royal-gold"];
-  const accent = c.style.accent || theme.colors.accent;
+  const { colors } = resolveStyle(c.style);
+  const accent = colors.accent;
+  const theme = { colors };
   const ar = c.locale === "ar";
   // Satori's font engine crashes on the Arabic comma glyph lookup, so swap it out.
   const s = (text: string) => {
@@ -48,9 +49,15 @@ export default async function Image({ params }: { params: Promise<{ slug: string
     return ar ? shapeArabic(clean) : clean;
   };
   const bride = c.couple.hideBrideName ? `${c.couple.brideName.charAt(0)}.` : c.couple.brideName;
-  const names = c.couple.brideFirst ? [bride, c.couple.groomName] : [c.couple.groomName, bride];
+  const withTitle = (title: string, name: string) => (title.trim() ? `${title.trim()} ${name}` : name);
+  const groomLine = withTitle(c.couple.groomTitle ?? "", c.couple.groomName);
+  const brideLine = withTitle(c.couple.brideTitle ?? "", bride);
+  const names = c.couple.brideFirst ? [brideLine, groomLine] : [groomLine, brideLine];
   const main = c.events[0];
   const cover = c.media.coverImage ? await coverDataUrl(c.media.coverImage) : null;
+  const heroBg = c.media.heroBackground ? await coverDataUrl(c.media.heroBackground) : null;
+  const longest = Math.max(names[0].length, names[1].length, 1);
+  const nameSize = Math.round(Math.min(cover ? 92 : 110, (cover ? 1300 : 2000) / longest));
 
   return new ImageResponse(
     (
@@ -63,8 +70,16 @@ export default async function Image({ params }: { params: Promise<{ slug: string
           color: theme.colors.text,
           fontFamily: ar ? "Naskh" : "Playfair, Naskh",
           padding: 28,
+          position: "relative",
         }}
       >
+        {heroBg && (
+          // Background photo washed with the theme color so the text stays legible.
+          <div style={{ display: "flex", position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }}>
+            <img src={heroBg} alt="" width={1200} height={630} style={{ objectFit: "cover", width: "100%", height: "100%" }} />
+            <div style={{ display: "flex", position: "absolute", top: 0, left: 0, width: "100%", height: "100%", background: theme.colors.bg, opacity: 0.78 }} />
+          </div>
+        )}
         <div
           style={{
             display: "flex",
@@ -91,9 +106,9 @@ export default async function Image({ params }: { params: Promise<{ slug: string
           )}
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
             <div style={{ fontSize: 36, color: theme.colors.muted }}>{s(ar ? "دعوة زفاف" : "Wedding Invitation")}</div>
-            <div style={{ fontSize: cover ? 92 : 110, color: accent, lineHeight: 1.25, marginTop: 12 }}>{s(names[0])}</div>
+            <div style={{ fontSize: nameSize, color: accent, lineHeight: 1.25, marginTop: 12 }}>{s(names[0])}</div>
             <div style={{ fontSize: 48, color: accent }}>{ar ? s("و") : "&"}</div>
-            <div style={{ fontSize: cover ? 92 : 110, color: accent, lineHeight: 1.25 }}>{s(names[1])}</div>
+            <div style={{ fontSize: nameSize, color: accent, lineHeight: 1.25 }}>{s(names[1])}</div>
             {main && (
               <div
                 style={{
