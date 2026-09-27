@@ -318,8 +318,8 @@ export function InvitationEditor({
                 className={`overflow-hidden rounded-2xl border-2 text-start transition ${style.theme === th.id ? "border-brand ring-4 ring-brand/15" : "border-line hover:border-stone-300"}`}
               >
                 <div className="flex h-16 items-center justify-center gap-1.5" style={{ background: th.colors.bg }}>
-                  {[th.colors.accent, th.colors.seal, th.colors.border].map((col) => (
-                    <span key={col} className="h-6 w-6 rounded-full ring-2 ring-white/60" style={{ background: col }} />
+                  {[th.colors.accent, th.colors.seal, th.colors.border].map((col, i) => (
+                    <span key={i} className="h-6 w-6 rounded-full ring-2 ring-white/60" style={{ background: col }} />
                   ))}
                 </div>
                 <div className="bg-white px-3 py-2">
