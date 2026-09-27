@@ -1,10 +1,14 @@
-import type { ColorKey, FontId, InvitationStyle, OrnamentId, PatternId, ThemeId } from "./invitation-schema";
+import type { CARD_STYLES, COUNTDOWN_STYLES, ColorKey, DATE_STYLES, FontId, HERO_LAYOUTS, InvitationStyle, OrnamentId, PatternId, ThemeId } from "./invitation-schema";
 
 export type Ornament = OrnamentId;
 export type Radius = "sharp" | "soft" | "round";
 export type Frame = "none" | "single" | "double";
 export type CoverShape = "arch" | "circle" | "rounded" | "square";
 export type Particle = "petals" | "hearts" | "stars" | "sparkles";
+export type HeroLayout = (typeof HERO_LAYOUTS)[number];
+export type DateStyle = (typeof DATE_STYLES)[number];
+export type CountdownStyle = (typeof COUNTDOWN_STYLES)[number];
+export type CardStyle = (typeof CARD_STYLES)[number];
 
 export interface Theme {
   id: ThemeId;
@@ -17,6 +21,10 @@ export interface Theme {
   frame: Frame;
   coverShape: CoverShape;
   particle: Particle;
+  heroLayout: HeroLayout;
+  dateStyle: DateStyle;
+  countdownStyle: CountdownStyle;
+  cardStyle: CardStyle;
   headingFont: FontId;
   bodyFont: FontId;
   dark?: boolean;
@@ -36,6 +44,10 @@ export const THEMES: Record<ThemeId, Theme> = {
     frame: "none",
     coverShape: "arch",
     particle: "petals",
+    heroLayout: "classic",
+    dateStyle: "ribbon",
+    countdownStyle: "boxes",
+    cardStyle: "elevated",
     headingFont: "aref-ruqaa",
     bodyFont: "amiri",
   }),
@@ -50,6 +62,10 @@ export const THEMES: Record<ThemeId, Theme> = {
     frame: "none",
     coverShape: "circle",
     particle: "petals",
+    heroLayout: "monogram",
+    dateStyle: "calendar",
+    countdownStyle: "circles",
+    cardStyle: "elevated",
     headingFont: "el-messiri",
     bodyFont: "amiri",
   }),
@@ -64,6 +80,10 @@ export const THEMES: Record<ThemeId, Theme> = {
     frame: "double",
     coverShape: "arch",
     particle: "sparkles",
+    heroLayout: "card",
+    dateStyle: "ribbon",
+    countdownStyle: "circles",
+    cardStyle: "glass",
     headingFont: "aref-ruqaa",
     bodyFont: "amiri",
     dark: true,
@@ -79,6 +99,10 @@ export const THEMES: Record<ThemeId, Theme> = {
     frame: "none",
     coverShape: "arch",
     particle: "petals",
+    heroLayout: "split",
+    dateStyle: "calendar",
+    countdownStyle: "minimal",
+    cardStyle: "outline",
     headingFont: "reem-kufi",
     bodyFont: "lateef",
   }),
@@ -93,6 +117,10 @@ export const THEMES: Record<ThemeId, Theme> = {
     frame: "single",
     coverShape: "square",
     particle: "sparkles",
+    heroLayout: "poster",
+    dateStyle: "stacked",
+    countdownStyle: "minimal",
+    cardStyle: "outline",
     headingFont: "reem-kufi",
     bodyFont: "tajawal",
   }),
@@ -107,6 +135,10 @@ export const THEMES: Record<ThemeId, Theme> = {
     frame: "none",
     coverShape: "arch",
     particle: "petals",
+    heroLayout: "classic",
+    dateStyle: "stacked",
+    countdownStyle: "boxes",
+    cardStyle: "elevated",
     headingFont: "el-messiri",
     bodyFont: "amiri",
   }),
@@ -121,6 +153,10 @@ export const THEMES: Record<ThemeId, Theme> = {
     frame: "double",
     coverShape: "arch",
     particle: "stars",
+    heroLayout: "card",
+    dateStyle: "ribbon",
+    countdownStyle: "circles",
+    cardStyle: "glass",
     headingFont: "aref-ruqaa",
     bodyFont: "scheherazade",
     dark: true,
@@ -136,6 +172,10 @@ export const THEMES: Record<ThemeId, Theme> = {
     frame: "single",
     coverShape: "arch",
     particle: "petals",
+    heroLayout: "monogram",
+    dateStyle: "ribbon",
+    countdownStyle: "boxes",
+    cardStyle: "elevated",
     headingFont: "aref-ruqaa",
     bodyFont: "amiri",
     dark: true,
@@ -151,6 +191,10 @@ export const THEMES: Record<ThemeId, Theme> = {
     frame: "none",
     coverShape: "circle",
     particle: "petals",
+    heroLayout: "classic",
+    dateStyle: "calendar",
+    countdownStyle: "circles",
+    cardStyle: "elevated",
     headingFont: "mirza",
     bodyFont: "lateef",
   }),
@@ -165,6 +209,10 @@ export const THEMES: Record<ThemeId, Theme> = {
     frame: "double",
     coverShape: "arch",
     particle: "stars",
+    heroLayout: "card",
+    dateStyle: "calendar",
+    countdownStyle: "boxes",
+    cardStyle: "outline",
     headingFont: "reem-kufi",
     bodyFont: "scheherazade",
   }),
@@ -179,6 +227,10 @@ export const THEMES: Record<ThemeId, Theme> = {
     frame: "single",
     coverShape: "rounded",
     particle: "hearts",
+    heroLayout: "split",
+    dateStyle: "stacked",
+    countdownStyle: "minimal",
+    cardStyle: "minimal",
     headingFont: "el-messiri",
     bodyFont: "tajawal",
   }),
@@ -193,6 +245,10 @@ export const THEMES: Record<ThemeId, Theme> = {
     frame: "double",
     coverShape: "square",
     particle: "sparkles",
+    heroLayout: "poster",
+    dateStyle: "stacked",
+    countdownStyle: "circles",
+    cardStyle: "glass",
     headingFont: "rakkas",
     bodyFont: "amiri",
     dark: true,
@@ -208,6 +264,10 @@ export const THEMES: Record<ThemeId, Theme> = {
     frame: "none",
     coverShape: "circle",
     particle: "sparkles",
+    heroLayout: "monogram",
+    dateStyle: "calendar",
+    countdownStyle: "minimal",
+    cardStyle: "outline",
     headingFont: "el-messiri",
     bodyFont: "almarai",
   }),
@@ -222,6 +282,10 @@ export const THEMES: Record<ThemeId, Theme> = {
     frame: "single",
     coverShape: "arch",
     particle: "petals",
+    heroLayout: "classic",
+    dateStyle: "ribbon",
+    countdownStyle: "circles",
+    cardStyle: "elevated",
     headingFont: "aref-ruqaa",
     bodyFont: "amiri",
   }),
@@ -236,6 +300,10 @@ export const THEMES: Record<ThemeId, Theme> = {
     frame: "double",
     coverShape: "arch",
     particle: "stars",
+    heroLayout: "card",
+    dateStyle: "stacked",
+    countdownStyle: "boxes",
+    cardStyle: "elevated",
     headingFont: "changa",
     bodyFont: "scheherazade",
   }),
@@ -269,6 +337,10 @@ export interface ResolvedStyle {
   frame: Frame;
   coverShape: CoverShape;
   particle: Particle;
+  heroLayout: HeroLayout;
+  dateStyle: DateStyle;
+  countdownStyle: CountdownStyle;
+  cardStyle: CardStyle;
   dark: boolean;
 }
 
@@ -297,6 +369,10 @@ export function resolveStyle(style: Pick<InvitationStyle, "theme" | "accent"> & 
     frame: style.frame || theme.frame,
     coverShape: style.coverShape || theme.coverShape,
     particle: style.particle || theme.particle,
+    heroLayout: style.heroLayout || theme.heroLayout,
+    dateStyle: style.dateStyle || theme.dateStyle,
+    countdownStyle: style.countdownStyle || theme.countdownStyle,
+    cardStyle: style.cardStyle || theme.cardStyle,
     dark,
   };
 }

@@ -24,6 +24,11 @@ export function defaultStyle(themeId: ThemeId = "royal-gold"): InvitationContent
     heroTone: "auto",
     heroOverlay: 55,
     heroBlur: 0,
+    backgroundScope: "hero",
+    heroLayout: "",
+    dateStyle: "",
+    countdownStyle: "",
+    cardStyle: "",
   };
 }
 
@@ -45,6 +50,7 @@ export function defaultContent(): InvitationContent {
       groomTitle: "",
       brideTitle: "",
       titlesInline: false,
+      monogram: "",
     },
     texts: {
       opening: "quran-rum",
@@ -74,7 +80,7 @@ export function defaultContent(): InvitationContent {
       { id: "p3", time: "11:00 م", title: "العشاء", icon: "dinner" },
     ],
     notes: ["نعتذر عن اصطحاب الأطفال", "يُرجى عدم التصوير داخل القاعة"],
-    media: { coverImage: "", heroBackground: "", gallery: [], musicUrl: "" },
+    media: { coverImage: "", heroBackground: "", backgroundVideo: "", gallery: [], musicUrl: "" },
     style: defaultStyle("royal-gold"),
     sections: [...SECTION_IDS],
     features: {

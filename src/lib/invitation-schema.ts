@@ -52,6 +52,11 @@ export const PARTICLES = ["petals", "hearts", "stars", "sparkles"] as const;
 export const HEADING_SCALES = ["sm", "md", "lg", "xl"] as const;
 export const ANIMATIONS = ["fade", "slide", "zoom", "none"] as const;
 export const HERO_TONES = ["auto", "light", "dark"] as const;
+export const BACKGROUND_SCOPES = ["hero", "page"] as const;
+export const HERO_LAYOUTS = ["classic", "card", "poster", "split", "monogram"] as const;
+export const DATE_STYLES = ["ribbon", "calendar", "stacked", "minimal"] as const;
+export const COUNTDOWN_STYLES = ["boxes", "circles", "minimal"] as const;
+export const CARD_STYLES = ["elevated", "outline", "glass", "minimal"] as const;
 export const SECTION_IDS = ["countdown", "events", "program", "gallery", "notes", "rsvp", "wishes"] as const;
 export const COLOR_KEYS = ["bg", "surface", "text", "muted", "accent", "border", "envelope", "seal"] as const;
 
@@ -106,6 +111,8 @@ export const invitationContentSchema = z.object({
     brideTitle: str(40).default(""),
     /** Show titles on the same line as the name instead of above it. */
     titlesInline: z.boolean().default(false),
+    /** Custom monogram for the wax seal / monogram layout; defaults to initials. */
+    monogram: str(8).default(""),
   }),
 
   texts: z.object({
@@ -126,6 +133,8 @@ export const invitationContentSchema = z.object({
     coverImage: optionalUrl,
     /** Full-bleed background image for the first (hero) section. */
     heroBackground: optionalUrl,
+    /** Optional looping background video (muted); the image is used as its poster. */
+    backgroundVideo: optionalUrl,
     gallery: z.array(optionalUrl).max(12).default([]),
     musicUrl: optionalUrl,
   }),
@@ -153,6 +162,12 @@ export const invitationContentSchema = z.object({
     /** Overlay opacity over the hero background image, 0–95 (%). */
     heroOverlay: z.number().int().min(0).max(95).default(55),
     heroBlur: z.number().int().min(0).max(12).default(0),
+    /** Whether the background image/video covers only the first section or the whole page. */
+    backgroundScope: z.enum(BACKGROUND_SCOPES).default("hero"),
+    heroLayout: orInherit(HERO_LAYOUTS),
+    dateStyle: orInherit(DATE_STYLES),
+    countdownStyle: orInherit(COUNTDOWN_STYLES),
+    cardStyle: orInherit(CARD_STYLES),
   }),
 
   sections: z.array(z.enum(SECTION_IDS)).max(SECTION_IDS.length).default([...SECTION_IDS]),

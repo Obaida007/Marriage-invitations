@@ -15,10 +15,15 @@ import {
   type ColorKey,
   type InvitationContent,
   type InvitationStyle,
+  CARD_STYLES,
+  COUNTDOWN_STYLES,
+  DATE_STYLES,
+  HERO_LAYOUTS,
 } from "@/lib/invitation-schema";
 import { THEME_LIST, THEMES, resolveStyle } from "@/lib/themes";
 import { FONTS } from "@/lib/fonts-meta";
 import { defaultStyle } from "@/lib/defaults";
+import { generatePalette, randomDesign } from "@/lib/design";
 import { Divider, Pattern } from "@/components/invitation/Ornaments";
 import { Field, Panel, Toggle } from "@/components/ui/controls";
 
@@ -57,6 +62,64 @@ const RADIUS_LABELS = { sharp: "حادة", soft: "ناعمة", round: "دائر�
 const FRAME_LABELS = { none: "بدون", single: "إطار مفرد", double: "إطار مزدوج" } as const;
 const COVER_LABELS = { arch: "قوس", circle: "دائرة", rounded: "مستطيل ناعم", square: "مربع" } as const;
 const PARTICLE_LABELS = { petals: "بتلات", hearts: "قلوب", stars: "نجوم", sparkles: "لمعان" } as const;
+const HERO_LAYOUT_META: Record<(typeof HERO_LAYOUTS)[number], { label: string; hint: string }> = {
+  classic: { label: "كلاسيكي", hint: "في المنتصف مع الزخارف" },
+  card: { label: "بطاقة ورقية", hint: "كبطاقة دعوة مطبوعة" },
+  poster: { label: "ملصق سينمائي", hint: "صورة كاملة والأسماء أسفلها" },
+  split: { label: "صورة ونص", hint: "صورة الغلاف بجانب النص" },
+  monogram: { label: "مونوغرام", hint: "ختم بالحروف الأولى" },
+};
+const DATE_LABELS = { ribbon: "شريط", calendar: "تقويم الشهر", stacked: "أرقام كبيرة", minimal: "سطر بسيط" } as const;
+const COUNTDOWN_LABELS = { boxes: "مربعات", circles: "دوائر", minimal: "أرقام فقط" } as const;
+const CARD_LABELS = { elevated: "بارزة", outline: "إطار فقط", glass: "زجاجية", minimal: "بدون بطاقة" } as const;
+
+/** Tiny schematic of each hero layout. */
+function LayoutThumb({ layout }: { layout: (typeof HERO_LAYOUTS)[number] }) {
+  const line = (w: string, extra = "") => <span className={`mx-auto block h-1 rounded-full bg-current ${w} ${extra}`} />;
+  return (
+    <span className="relative flex h-20 w-full flex-col items-center justify-center gap-1 overflow-hidden rounded-lg bg-soft px-2 text-brand-dark">
+      {layout === "classic" && (
+        <>
+          {line("w-8", "opacity-40")}
+          {line("w-12", "h-2")}
+          {line("w-4", "opacity-60")}
+          {line("w-12", "h-2")}
+          {line("w-10", "opacity-40 mt-1")}
+        </>
+      )}
+      {layout === "card" && (
+        <span className="flex h-16 w-14 flex-col items-center justify-center gap-1 rounded bg-white shadow">
+          {line("w-8", "h-1.5")}
+          {line("w-3", "opacity-60")}
+          {line("w-8", "h-1.5")}
+        </span>
+      )}
+      {layout === "poster" && (
+        <span className="absolute inset-0 flex flex-col items-center justify-end gap-1 bg-gradient-to-b from-stone-300 to-stone-700 pb-2 text-white">
+          {line("w-12", "h-2")}
+          {line("w-8", "opacity-70")}
+        </span>
+      )}
+      {layout === "split" && (
+        <span className="flex w-full items-center gap-2">
+          <span className="h-14 w-1/2 rounded-t-full bg-current opacity-30" />
+          <span className="flex flex-1 flex-col gap-1">
+            {line("w-10", "h-1.5")}
+            {line("w-6", "opacity-60")}
+            {line("w-10", "h-1.5")}
+          </span>
+        </span>
+      )}
+      {layout === "monogram" && (
+        <>
+          <span className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-double border-current text-[10px] font-bold">م س</span>
+          {line("w-10", "h-1.5 mt-1")}
+        </>
+      )}
+    </span>
+  );
+}
+
 const SCALE_LABELS = { sm: "صغير", md: "متوسط", lg: "كبير", xl: "كبير جداً" } as const;
 const ANIMATION_LABELS = { fade: "ظهور تدريجي", slide: "انزلاق", zoom: "تكبير", none: "بدون حركة" } as const;
 
@@ -77,7 +140,7 @@ function loadSaved(): SavedTheme[] {
 
 /** Keeps motion/hero preferences when switching the look. */
 function withKeptPrefs(next: InvitationStyle, prev: InvitationStyle): InvitationStyle {
-  return { ...next, envelope: prev.envelope, petals: prev.petals, heroTone: prev.heroTone, heroOverlay: prev.heroOverlay, heroBlur: prev.heroBlur };
+  return { ...next, envelope: prev.envelope, petals: prev.petals, heroTone: prev.heroTone, heroOverlay: prev.heroOverlay, heroBlur: prev.heroBlur, backgroundScope: prev.backgroundScope };
 }
 
 export function DesignPanel({ content, patch, defaultOpen }: { content: InvitationContent; patch: Patch; defaultOpen?: boolean }) {
@@ -113,6 +176,15 @@ export function DesignPanel({ content, patch, defaultOpen }: { content: Invitati
   return (
     <>
       <Panel title="القالب" icon="🎨" defaultOpen={defaultOpen}>
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-gradient-to-l from-amber-50 to-rose-50 p-3">
+          <button type="button" className="btn-primary" onClick={() => {
+              const next = randomDesign(style);
+              patch((c) => void (c.style = next));
+            }}>
+            ✨ فاجئني بتصميم فريد
+          </button>
+          <p className="flex-1 text-xs text-stone-600">يمزج قالباً وألواناً وتخطيطاً وزخارف وخطوطاً بشكل عشوائي متناسق — اضغط مرة أخرى لتصميم مختلف. آلاف التركيبات الممكنة حتى لا تتشابه دعوتك مع غيرها.</p>
+        </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {THEME_LIST.map((th) => (
             <button
@@ -176,7 +248,42 @@ export function DesignPanel({ content, patch, defaultOpen }: { content: Invitati
         )}
       </Panel>
 
+      <Panel title="التخطيط" icon="📐" defaultOpen={defaultOpen}>
+        <div>
+          <span className="label">تخطيط القسم الأول</span>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+            {HERO_LAYOUTS.map((l) => (
+              <button
+                key={l}
+                type="button"
+                onClick={() => set("heroLayout", l === rs.theme.heroLayout ? "" : l)}
+                className={`rounded-xl border p-1.5 text-center transition ${rs.heroLayout === l ? "border-brand bg-soft/50 ring-2 ring-brand/15" : "border-line bg-white hover:border-stone-300"}`}
+              >
+                <LayoutThumb layout={l} />
+                <span className="mt-1 block text-xs font-bold">{HERO_LAYOUT_META[l].label}</span>
+                <span className="block text-[10px] leading-tight text-stone-500">{HERO_LAYOUT_META[l].hint}</span>
+              </button>
+            ))}
+          </div>
+          {(rs.heroLayout === "split" || rs.heroLayout === "poster") && !content.media.coverImage && (
+            <p className="mt-2 text-xs text-amber-700">هذا التخطيط يحتاج «صورة الغلاف» من قسم الصور (بدونها يظهر بشكل مبسّط).</p>
+          )}
+        </div>
+        <Segmented label="شكل التاريخ" options={DATE_STYLES} labels={DATE_LABELS} value={rs.dateStyle} onChange={(v) => set("dateStyle", v === rs.theme.dateStyle ? "" : v)} />
+        <Segmented label="شكل العد التنازلي" options={COUNTDOWN_STYLES} labels={COUNTDOWN_LABELS} value={rs.countdownStyle} onChange={(v) => set("countdownStyle", v === rs.theme.countdownStyle ? "" : v)} />
+        <Segmented label="نمط البطاقات" options={CARD_STYLES} labels={CARD_LABELS} value={rs.cardStyle} onChange={(v) => set("cardStyle", v === rs.theme.cardStyle ? "" : v)} />
+      </Panel>
+
       <Panel title="الألوان" icon="🖌️">
+        <PaletteGenerator
+          accent={rs.colors.accent}
+          onGenerate={(colors) =>
+            patch((c) => {
+              c.style.colors = colors;
+              c.style.accent = "";
+            })
+          }
+        />
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {COLOR_KEYS.map((k) => {
             const custom = k === "accent" ? style.colors?.accent || style.accent : style.colors?.[k];
@@ -292,6 +399,23 @@ export function DesignPanel({ content, patch, defaultOpen }: { content: Invitati
         {style.petals && <Segmented label="شكل العناصر المتساقطة" options={PARTICLES} labels={PARTICLE_LABELS} value={rs.particle} onChange={(v) => set("particle", v === rs.theme.particle ? "" : v)} />}
       </Panel>
     </>
+  );
+}
+
+function PaletteGenerator({ accent, onGenerate }: { accent: string; onGenerate: (colors: ReturnType<typeof generatePalette>) => void }) {
+  const [base, setBase] = useState(accent);
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-dashed border-line p-3">
+      <span className="text-sm font-bold">🎯 لوحة ألوان من لون واحد:</span>
+      <input type="color" className="h-9 w-12 cursor-pointer rounded-lg border border-line bg-white p-0.5" value={base} onChange={(e) => setBase(e.target.value)} aria-label="اللون الأساسي" />
+      <button type="button" className="btn-ghost px-3 py-1.5 text-xs" onClick={() => onGenerate(generatePalette(base, "light"))}>
+        ☀️ فاتحة
+      </button>
+      <button type="button" className="btn-ghost px-3 py-1.5 text-xs" onClick={() => onGenerate(generatePalette(base, "dark"))}>
+        🌙 داكنة
+      </button>
+      <span className="w-full text-xs text-stone-500">اختر لوناً (مثل لون فستان العروس أو ورود القاعة) وسنولّد منه كل ألوان الدعوة بتناسق.</span>
+    </div>
   );
 }
 

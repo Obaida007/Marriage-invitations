@@ -6,11 +6,13 @@ import { SECTION_IDS, type InvitationContent, type SectionId } from "@/lib/invit
 import { resolveStyle, styleVars, type CoverShape } from "@/lib/themes";
 import { FONTS } from "@/lib/fonts-meta";
 import { OPENING_TEXT, t } from "@/lib/i18n";
-import { formatDayNumber, formatGregorian, formatHijri, formatNumber, zonedToDate } from "@/lib/dates";
+import { formatGregorian, formatNumber, zonedToDate } from "@/lib/dates";
 import { isRsvpClosed } from "@/lib/rsvp";
 import { coupleInitials, coupleTitle } from "@/lib/couple";
 import { Corner, Divider, Icon, Pattern } from "./Ornaments";
 import { Reveal, RevealContext } from "./Reveal";
+import { Backdrop } from "./Backdrop";
+import { DateBlock } from "./DateBlock";
 import { Petals } from "./Petals";
 import { Countdown } from "./Countdown";
 import { Envelope } from "./Envelope";
@@ -126,13 +128,17 @@ export function InvitationView({ content, slug, guest: initialGuest = null, wish
 
   const rootStyle = {
     ...styleVars(rs),
+    // Cards keep the theme's text colors even when the page text is re-toned.
+    "--inv-card-text": rs.colors.text,
+    "--inv-card-muted": rs.colors.muted,
     "--inv-heading": FONTS[style.headingFont]?.cssVar,
     "--inv-body": FONTS[style.bodyFont]?.cssVar,
   } as React.CSSProperties;
 
-  // Hero background image: overlay + text tone so the names stay readable.
-  const heroBg = media.heroBackground;
-  const tone = heroBg ? style.heroTone : "auto";
+  // Background image/video: overlay + text tone so the text stays readable.
+  const hasBg = !!(media.heroBackground || media.backgroundVideo);
+  const scope = style.backgroundScope ?? "hero";
+  const tone = hasBg ? style.heroTone : "auto";
   const heroVars = (
     tone === "light"
       ? { "--inv-text": "#ffffff", "--inv-muted": "rgba(255,255,255,.82)" }
@@ -141,6 +147,58 @@ export function InvitationView({ content, slug, guest: initialGuest = null, wish
         : {}
   ) as React.CSSProperties;
   const overlayColor = tone === "light" ? "#000000" : tone === "dark" ? "#ffffff" : rs.colors.bg;
+
+  // Hero layout; layouts that need a photo fall back gracefully without one.
+  const posterImage = rs.heroLayout === "poster" && !(hasBg && scope === "hero") ? media.coverImage : "";
+  const splitImage = rs.heroLayout === "split" ? media.coverImage || (scope === "hero" ? "" : media.heroBackground) : "";
+  const layout = rs.heroLayout === "split" && !splitImage ? "classic" : rs.heroLayout;
+  const posterVars = (posterImage ? { "--inv-text": "#ffffff", "--inv-muted": "rgba(255,255,255,.85)" } : {}) as React.CSSProperties;
+  const monogram = couple.monogram?.trim() || coupleInitials(couple);
+
+  const openingLine = opening && <p className="mx-auto max-w-md font-amiri text-lg leading-loose text-inv-muted sm:text-xl">{opening}</p>;
+  const greeting = guest && (
+    <p className="mt-8 font-body text-lg text-inv-muted">
+      {d.dear} <span className="font-heading text-2xl text-inv-text">{guest.name}</span>
+      {guest.maxCompanions > 0 && (
+        <span className="mt-1 block font-sans text-sm">
+          ({formatNumber(guest.maxCompanions + 1, locale)} {d.guests})
+        </span>
+      )}
+    </p>
+  );
+  const hostsBlock = (
+    <>
+      {texts.hosts && <p className="mt-8 font-body text-xl leading-relaxed">{texts.hosts}</p>}
+      {texts.invitationLine && <p className="mx-auto mt-3 max-w-md font-body text-lg leading-relaxed text-inv-muted">{texts.invitationLine}</p>}
+    </>
+  );
+  const nameScale = layout === "monogram" ? smaller(style.headingScale) : layout === "poster" ? larger(style.headingScale) : style.headingScale;
+  const names = (
+    <h1 className="font-heading leading-tight">
+      <CoupleName person={first} inline={couple.titlesInline} scale={nameScale} />
+      <span className="my-4 block text-3xl text-inv-accent">{d.weds}</span>
+      <CoupleName person={second} inline={couple.titlesInline} scale={nameScale} />
+    </h1>
+  );
+  const dateBlock = main && <DateBlock startsAt={main.startsAt} locale={locale} variant={rs.dateStyle} showHijri={features.hijriDate} />;
+  const decorations = (
+    <>
+      {rs.frame !== "none" && (
+        <div
+          className={`pointer-events-none absolute inset-3 border-inv-accent/60 sm:inset-5 ${rs.frame === "double" ? "border-[5px] border-double" : "border"}`}
+          style={{ borderRadius: "var(--inv-radius-sm)" }}
+        />
+      )}
+      {style.corners !== false && (
+        <>
+          <Corner ornament={ornament} className="absolute start-3 top-3 rtl:-scale-x-100" />
+          <Corner ornament={ornament} className="absolute end-3 top-3 ltr:-scale-x-100" />
+          <Corner ornament={ornament} className="absolute bottom-3 start-3 -scale-y-100 rtl:scale-x-[-1]" />
+          <Corner ornament={ornament} className="absolute bottom-3 end-3 -scale-y-100 ltr:-scale-x-100" />
+        </>
+      )}
+    </>
+  );
 
   const section = "mx-auto w-full max-w-xl px-5";
   const sectionTitle = (id: SectionId, fallback: string) => texts.sectionTitles?.[id]?.trim() || fallback;
@@ -151,7 +209,7 @@ export function InvitationView({ content, slug, guest: initialGuest = null, wish
       <Reveal className={section}>
         <div className="inv-card p-6 text-center">
           <h2 className="mb-5 font-heading text-2xl text-inv-accent">{sectionTitle("countdown", d.countdownTitle)}</h2>
-          <Countdown target={target} locale={locale} d={d} />
+          <Countdown target={target} locale={locale} d={d} variant={rs.countdownStyle} />
         </div>
       </Reveal>
     ),
@@ -268,95 +326,114 @@ export function InvitationView({ content, slug, guest: initialGuest = null, wish
 
   return (
     <RevealContext.Provider value={style.animation ?? "fade"}>
-      <div dir={d.dir} lang={locale} className="inv-root relative min-h-full overflow-x-clip" style={rootStyle}>
-        {!preview && <Envelope open={opened} onOpen={handleOpen} initials={coupleInitials(couple)} guestName={guest?.name} d={d} />}
+      <div
+        dir={d.dir}
+        lang={locale}
+        data-cards={rs.cardStyle}
+        data-page-bg={hasBg && scope === "page" ? "" : undefined}
+        className="inv-root relative min-h-full overflow-x-clip"
+        style={{ ...rootStyle, ...(scope === "page" ? heroVars : {}) }}
+      >
+        {!preview && <Envelope open={opened} onOpen={handleOpen} initials={monogram} guestName={guest?.name} d={d} />}
         {!preview && opened && style.petals && <Petals shape={rs.particle} />}
         {musicOn && <audio ref={audioRef} src={media.musicUrl} loop preload="none" />}
         {musicOn && !preview && opened && <MusicButton playing={playing} onToggle={toggleMusic} label={d.music} />}
 
-        <Pattern pattern={rs.pattern} opacity={rs.dark ? 0.09 : 0.07} />
+        {hasBg && scope === "page" ? (
+          <Backdrop image={media.heroBackground} video={media.backgroundVideo} overlayColor={overlayColor} overlay={style.heroOverlay ?? 55} blur={style.heroBlur ?? 0} scope="page" />
+        ) : (
+          <Pattern pattern={rs.pattern} opacity={rs.dark ? 0.09 : 0.07} />
+        )}
 
         {/* ---------- Hero ---------- */}
         <header
-          className={`relative flex ${preview ? "min-h-[700px]" : "min-h-[100svh]"} flex-col items-center justify-center overflow-hidden px-5 py-16 text-center`}
-          style={heroVars}
+          className={`relative flex ${preview ? "min-h-[var(--inv-viewport,700px)]" : "min-h-[100svh]"} flex-col items-center ${layout === "poster" ? "justify-between" : "justify-center"} overflow-hidden px-5 py-16 text-center`}
+          style={{ ...(scope === "hero" ? heroVars : {}), ...posterVars }}
         >
-          {heroBg && (
-            <>
+          {hasBg && scope === "hero" && (
+            <Backdrop image={media.heroBackground} video={media.backgroundVideo} overlayColor={overlayColor} overlay={style.heroOverlay ?? 55} blur={style.heroBlur ?? 0} scope="hero" />
+          )}
+          {posterImage && (
+            <div className="pointer-events-none absolute inset-0" aria-hidden>
               {/* eslint-disable-next-line @next/next/no-img-element -- user-provided URLs from any host */}
-              <img
-                src={heroBg}
-                alt=""
-                className="absolute inset-0 h-full w-full object-cover"
-                style={style.heroBlur ? { filter: `blur(${style.heroBlur}px)`, transform: "scale(1.08)" } : undefined}
-              />
-              <div className="absolute inset-0" style={{ background: overlayColor, opacity: (style.heroOverlay ?? 55) / 100 }} />
-              <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-inv-bg" />
-            </>
+              <img src={posterImage} alt="" className="h-full w-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/10 to-black/80" />
+            </div>
           )}
 
-          {rs.frame !== "none" && (
-            <div
-              className={`pointer-events-none absolute inset-3 border-inv-accent/60 sm:inset-5 ${rs.frame === "double" ? "border-[5px] border-double" : "border"}`}
-              style={{ borderRadius: "var(--inv-radius-sm)" }}
-            />
-          )}
+          {layout !== "card" && decorations}
 
-          {style.corners !== false && (
+          {layout === "poster" ? (
             <>
-              <Corner ornament={ornament} className="absolute start-3 top-3 rtl:-scale-x-100" />
-              <Corner ornament={ornament} className="absolute end-3 top-3 ltr:-scale-x-100" />
-              <Corner ornament={ornament} className="absolute bottom-3 start-3 -scale-y-100 rtl:scale-x-[-1]" />
-              <Corner ornament={ornament} className="absolute bottom-3 end-3 -scale-y-100 ltr:-scale-x-100" />
+              <Reveal className="relative w-full max-w-xl text-inv-text">{openingLine}</Reveal>
+              <Reveal className="relative w-full max-w-xl pb-10 text-inv-text">
+                {greeting}
+                {hostsBlock}
+                <div className="mt-6">{names}</div>
+                {dateBlock}
+              </Reveal>
             </>
+          ) : layout === "split" ? (
+            <div className="relative grid w-full max-w-5xl items-center gap-10 md:grid-cols-2">
+              <Reveal>
+                <CoverImage src={splitImage} alt={title} shape={rs.coverShape} large />
+              </Reveal>
+              <Reveal className="text-inv-text">
+                {openingLine}
+                {greeting}
+                {hostsBlock}
+                <Divider ornament={ornament} className="my-8" />
+                {names}
+                {dateBlock}
+              </Reveal>
+            </div>
+          ) : layout === "card" ? (
+            <Reveal className="relative w-full max-w-lg">
+              <div className="inv-card relative overflow-hidden px-6 py-14 text-inv-text sm:px-10">
+                {decorations}
+                <div className="relative">
+                  {openingLine}
+                  {media.coverImage && <CoverImage src={media.coverImage} alt={title} shape={rs.coverShape} />}
+                  {greeting}
+                  {hostsBlock}
+                  <Divider ornament={ornament} className="my-8" />
+                  {names}
+                  {dateBlock}
+                </div>
+              </div>
+            </Reveal>
+          ) : layout === "monogram" ? (
+            <Reveal className="relative w-full max-w-xl text-inv-text">
+              {openingLine}
+              <div className="relative mx-auto mt-8 flex h-44 w-44 items-center justify-center rounded-full border-[5px] border-double border-inv-accent/70 sm:h-52 sm:w-52">
+                <div className="absolute inset-3 rounded-full border border-inv-accent/40" />
+                <span className="font-heading text-5xl text-inv-accent sm:text-6xl">{monogram}</span>
+              </div>
+              {greeting}
+              {hostsBlock}
+              <Divider ornament={ornament} className="my-8" />
+              {names}
+              {dateBlock}
+            </Reveal>
+          ) : (
+            <Reveal className="relative w-full max-w-xl text-inv-text">
+              {openingLine}
+              {media.coverImage && <CoverImage src={media.coverImage} alt={title} shape={rs.coverShape} />}
+              {greeting}
+              {hostsBlock}
+              <Divider ornament={ornament} className="my-8" />
+              {names}
+              {dateBlock}
+            </Reveal>
           )}
 
-          <Reveal className="relative w-full max-w-xl text-inv-text">
-            {opening && <p className="mx-auto max-w-md font-amiri text-lg leading-loose text-inv-muted sm:text-xl">{opening}</p>}
-
-            {media.coverImage && <CoverImage src={media.coverImage} alt={title} shape={rs.coverShape} />}
-
-            {guest && (
-              <p className="mt-8 font-body text-lg text-inv-muted">
-                {d.dear} <span className="font-heading text-2xl text-inv-text">{guest.name}</span>
-                {guest.maxCompanions > 0 && (
-                  <span className="mt-1 block font-sans text-sm">
-                    ({formatNumber(guest.maxCompanions + 1, locale)} {d.guests})
-                  </span>
-                )}
-              </p>
-            )}
-
-            {texts.hosts && <p className="mt-8 font-body text-xl leading-relaxed">{texts.hosts}</p>}
-            {texts.invitationLine && <p className="mx-auto mt-3 max-w-md font-body text-lg leading-relaxed text-inv-muted">{texts.invitationLine}</p>}
-
-            <Divider ornament={ornament} className="my-8" />
-
-            <h1 className="font-heading leading-tight">
-              <CoupleName person={first} inline={couple.titlesInline} scale={style.headingScale} />
-              <span className="my-4 block text-3xl text-inv-accent">{d.weds}</span>
-              <CoupleName person={second} inline={couple.titlesInline} scale={style.headingScale} />
-            </h1>
-
-            {main && (
-              <div className="mx-auto mt-10 flex max-w-sm items-center justify-center gap-4 font-body">
-                <span className="flex-1 border-y border-inv-accent/50 py-2 text-lg">{formatGregorian(main.startsAt, locale).split(/[،,]/)[0]}</span>
-                <span className="font-heading text-6xl text-inv-accent">{formatNumber(Number(formatDayNumber(main.startsAt)), locale)}</span>
-                <span className="flex-1 border-y border-inv-accent/50 py-2 text-lg">
-                  {new Intl.DateTimeFormat(locale === "ar" ? "ar-u-nu-arab" : "en-GB", { month: "long", year: "numeric", timeZone: "UTC" }).format(
-                    new Date(`${main.startsAt.slice(0, 10)}T12:00:00Z`),
-                  )}
-                </span>
-              </div>
-            )}
-            {main && features.hijriDate && <p className="mt-3 font-sans text-sm text-inv-muted">{formatHijri(main.startsAt, locale)}</p>}
-          </Reveal>
-
-          <a href="#details" className="float-soft absolute bottom-8 text-inv-accent" aria-label={d.eventDetails}>
-            <svg className="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path d="M6 9l6 6 6-6" />
-            </svg>
-          </a>
+          {layout !== "poster" && (
+            <a href="#details" className="float-soft absolute bottom-8 text-inv-accent" aria-label={d.eventDetails}>
+              <svg className="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </a>
+          )}
         </header>
 
         <main className="relative space-y-16 pb-24">
@@ -391,6 +468,10 @@ export function InvitationView({ content, slug, guest: initialGuest = null, wish
     </RevealContext.Provider>
   );
 }
+
+const SCALE_ORDER = ["sm", "md", "lg", "xl"] as const;
+const smaller = (s: keyof typeof NAME_SIZES = "md") => SCALE_ORDER[Math.max(0, SCALE_ORDER.indexOf(s) - 1)];
+const larger = (s: keyof typeof NAME_SIZES = "md") => SCALE_ORDER[Math.min(3, SCALE_ORDER.indexOf(s) + 1)];
 
 const NAME_SIZES = {
   sm: "text-4xl sm:text-5xl",
@@ -429,10 +510,10 @@ const COVER_CLASSES: Record<CoverShape, { frame: string; img: string }> = {
   square: { frame: "rounded-none w-56 sm:w-64", img: "aspect-[4/5]" },
 };
 
-function CoverImage({ src, alt, shape }: { src: string; alt: string; shape: CoverShape }) {
+function CoverImage({ src, alt, shape, large }: { src: string; alt: string; shape: CoverShape; large?: boolean }) {
   const c = COVER_CLASSES[shape] ?? COVER_CLASSES.arch;
   return (
-    <div className={`mx-auto mt-8 overflow-hidden border-4 border-inv-surface shadow-xl ring-1 ring-inv-accent/40 ${c.frame}`}>
+    <div className={`mx-auto overflow-hidden border-4 border-inv-surface shadow-xl ring-1 ring-inv-accent/40 ${c.frame} ${large ? "!w-full max-w-sm" : "mt-8"}`}>
       {/* eslint-disable-next-line @next/next/no-img-element -- user-provided URLs from any host */}
       <img src={src} alt={alt} className={`${c.img} w-full object-cover`} />
     </div>

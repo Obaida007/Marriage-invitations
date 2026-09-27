@@ -224,6 +224,9 @@ export function InvitationEditor({
           {(couple.groomTitle || couple.brideTitle) && (
             <Toggle label="اللقب بجانب الاسم" hint="بدلاً من إظهاره في سطر صغير فوق الاسم" checked={couple.titlesInline} onChange={(v) => patch((c) => void (c.couple.titlesInline = v))} />
           )}
+          <Field label="المونوغرام / نص ختم الظرف (اختياري)" hint="يظهر على ختم الشمع وفي تخطيط «مونوغرام». يُترك فارغاً لاستخدام الحرفين الأولين تلقائياً">
+            <input className="input" placeholder={`${couple.groomName.charAt(0)} ${couple.brideName.charAt(0)}`} value={couple.monogram} maxLength={8} onChange={(e) => patch((c) => void (c.couple.monogram = e.target.value))} />
+          </Field>
           <Toggle label="إظهار اسم العروس أولاً" checked={couple.brideFirst} onChange={(v) => patch((c) => void (c.couple.brideFirst = v))} />
           <Toggle label="إخفاء اسم العروس" hint="يُعرض الحرف الأول فقط، تقديراً للخصوصية" checked={couple.hideBrideName} onChange={(v) => patch((c) => void (c.couple.hideBrideName = v))} />
         </Panel>
@@ -325,26 +328,45 @@ export function InvitationEditor({
         <DesignPanel content={content} patch={patch} defaultOpen={mode === "create"} />
 
         <Panel title="الصور والموسيقى" icon="🖼️" defaultOpen={mode === "create"}>
-          <Field label="صورة خلفية القسم الأول (اختياري)" hint="تملأ خلفية الشاشة الأولى خلف الأسماء — صورة القاعة أو الورود أو صورة للعروسين">
-            <MediaInput kind="image" maxSize={2000} value={media.heroBackground} onChange={(v) => patch((c) => void (c.media.heroBackground = v))} />
-          </Field>
-          {media.heroBackground && (
-            <div className="space-y-4 rounded-2xl bg-soft/60 p-4">
-              <Segmented
-                label="لون النص فوق الصورة"
-                options={["auto", "light", "dark"] as const}
-                labels={{ auto: "ألوان القالب", light: "نص فاتح (طبقة داكنة)", dark: "نص داكن (طبقة فاتحة)" }}
-                value={style.heroTone}
-                onChange={(v) => patch((c) => void (c.style.heroTone = v))}
-              />
-              <Field label={`شفافية الطبقة فوق الصورة: ${style.heroOverlay}%`} hint="زِدها إذا كانت الأسماء غير واضحة">
-                <input type="range" min={0} max={95} step={5} className="w-full accent-[var(--brand)]" value={style.heroOverlay} onChange={(e) => patch((c) => void (c.style.heroOverlay = Number(e.target.value)))} />
-              </Field>
-              <Field label={`تمويه الصورة: ${style.heroBlur}px`}>
-                <input type="range" min={0} max={12} step={1} className="w-full accent-[var(--brand)]" value={style.heroBlur} onChange={(e) => patch((c) => void (c.style.heroBlur = Number(e.target.value)))} />
-              </Field>
+          <div className="space-y-4 rounded-2xl border border-line p-4">
+            <div>
+              <span className="text-sm font-bold text-stone-800">🌄 خلفية الدعوة (صورة أو فيديو)</span>
+              <p className="text-xs text-stone-500">صورة القاعة أو الورود أو فيديو قصير. الفيديو يعمل صامتاً ومتكرراً، والصورة تظهر ريثما يُحمَّل.</p>
             </div>
-          )}
+            <Field label="صورة الخلفية">
+              <MediaInput kind="image" maxSize={2000} value={media.heroBackground} onChange={(v) => patch((c) => void (c.media.heroBackground = v))} />
+            </Field>
+            <Field label="فيديو الخلفية (اختياري)" hint="MP4 أو WebM حتى 20 ميغابايت، ويُفضّل أقل من 10 ثوانٍ وبدقة 720p. للملفات الأكبر ضع رابطاً مباشراً لملف الفيديو.">
+              <MediaInput kind="video" value={media.backgroundVideo} onChange={(v) => patch((c) => void (c.media.backgroundVideo = v))} />
+            </Field>
+            {(media.heroBackground || media.backgroundVideo) && (
+              <div className="space-y-4 rounded-2xl bg-soft/60 p-4">
+                <Segmented
+                  label="أين تظهر الخلفية؟"
+                  options={["hero", "page"] as const}
+                  labels={{ hero: "القسم الأول فقط", page: "كل صفحة الدعوة" }}
+                  value={style.backgroundScope ?? "hero"}
+                  onChange={(v) => patch((c) => void (c.style.backgroundScope = v))}
+                />
+                <Segmented
+                  label="لون النص فوق الخلفية"
+                  options={["auto", "light", "dark"] as const}
+                  labels={{ auto: "ألوان القالب", light: "نص فاتح (طبقة داكنة)", dark: "نص داكن (طبقة فاتحة)" }}
+                  value={style.heroTone}
+                  onChange={(v) => patch((c) => void (c.style.heroTone = v))}
+                />
+                <Field label={`شفافية الطبقة فوق الخلفية: ${style.heroOverlay}%`} hint="زِدها إذا كان النص غير واضح">
+                  <input type="range" min={0} max={95} step={5} className="w-full accent-[var(--brand)]" value={style.heroOverlay} onChange={(e) => patch((c) => void (c.style.heroOverlay = Number(e.target.value)))} />
+                </Field>
+                <Field label={`تمويه الخلفية: ${style.heroBlur}px`}>
+                  <input type="range" min={0} max={12} step={1} className="w-full accent-[var(--brand)]" value={style.heroBlur} onChange={(e) => patch((c) => void (c.style.heroBlur = Number(e.target.value)))} />
+                </Field>
+                {style.backgroundScope === "page" && (
+                  <p className="text-xs text-stone-500">💡 مع خلفية لكل الصفحة، جرّب نمط البطاقات «زجاجي» من قسم «التخطيط» لمظهر أنيق.</p>
+                )}
+              </div>
+            )}
+          </div>
           <Field label="صورة الغلاف (اختياري)" hint="صورة داخل إطار (قوس أو دائرة…) فوق الأسماء">
             <MediaInput kind="image" value={media.coverImage} onChange={(v) => patch((c) => void (c.media.coverImage = v))} />
           </Field>
@@ -565,7 +587,7 @@ function EventEditor({
   );
 }
 
-function MediaInput({ kind, value, onChange, maxSize }: { kind: "image" | "audio"; value: string; onChange: (v: string) => void; maxSize?: number }) {
+function MediaInput({ kind, value, onChange, maxSize }: { kind: "image" | "audio" | "video"; value: string; onChange: (v: string) => void; maxSize?: number }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const ref = useRef<HTMLInputElement>(null);
@@ -589,16 +611,24 @@ function MediaInput({ kind, value, onChange, maxSize }: { kind: "image" | "audio
       <div className="flex gap-2">
         <input className="input" dir="ltr" placeholder="https://…" value={value} onChange={(e) => onChange(e.target.value.trim())} />
         <button type="button" className="btn-ghost shrink-0" onClick={() => ref.current?.click()} disabled={busy}>
-          {busy ? <Spinner /> : <Icon name={kind === "image" ? "camera" : "music"} className="h-4 w-4" />}
+          {busy ? <Spinner /> : <Icon name={kind === "audio" ? "music" : kind === "video" ? "play" : "camera"} className="h-4 w-4" />}
           رفع
         </button>
-        <input ref={ref} type="file" hidden accept={kind === "image" ? "image/*" : "audio/*"} onChange={(e) => onFile(e.target.files?.[0])} />
+        <input ref={ref} type="file" hidden accept={kind === "image" ? "image/*" : kind === "video" ? "video/mp4,video/webm,video/quicktime" : "audio/*"} onChange={(e) => onFile(e.target.files?.[0])} />
       </div>
       {error && <p className="text-sm text-red-600">{error}</p>}
       {value && kind === "image" && (
         <div className="flex items-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={value} alt="" className="h-16 w-16 rounded-xl border border-line object-cover" />
+          <button type="button" className="text-sm text-red-600 hover:underline" onClick={() => onChange("")}>
+            إزالة
+          </button>
+        </div>
+      )}
+      {value && kind === "video" && (
+        <div className="flex items-center gap-3">
+          <video src={value} muted loop autoPlay playsInline className="h-20 w-32 rounded-xl border border-line bg-black object-cover" />
           <button type="button" className="text-sm text-red-600 hover:underline" onClick={() => onChange("")}>
             إزالة
           </button>

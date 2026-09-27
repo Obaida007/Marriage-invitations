@@ -124,6 +124,36 @@ body {
     box-shadow: 0 10px 40px -20px color-mix(in srgb, var(--inv-accent) 45%, transparent);
   }
 
+  /* Cards always use the theme's own text colors (the page text may be re-toned
+     over a background photo/video). */
+  .inv-card {
+    --inv-text: var(--inv-card-text);
+    --inv-muted: var(--inv-card-muted);
+    color: var(--inv-text);
+  }
+  .inv-root[data-cards="outline"] .inv-card {
+    background: color-mix(in srgb, var(--inv-surface) 35%, transparent);
+    box-shadow: none;
+    border-color: color-mix(in srgb, var(--inv-accent) 55%, transparent);
+  }
+  .inv-root[data-cards="glass"] .inv-card {
+    background: color-mix(in srgb, var(--inv-surface) 62%, transparent);
+    -webkit-backdrop-filter: blur(14px) saturate(1.2);
+    backdrop-filter: blur(14px) saturate(1.2);
+    border-color: color-mix(in srgb, var(--inv-border) 70%, transparent);
+  }
+  .inv-root[data-cards="minimal"] .inv-card {
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+  }
+  /* Transparent cards over a page photo inherit the page text tone instead. */
+  .inv-root[data-page-bg][data-cards="minimal"] .inv-card,
+  .inv-root[data-page-bg][data-cards="outline"] .inv-card {
+    --inv-text: inherit;
+    --inv-muted: inherit;
+  }
+
   .inv-btn {
     @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 text-[15px] font-bold transition active:scale-[.97] disabled:opacity-60;
     border-radius: var(--inv-btn-radius, 9999px);
