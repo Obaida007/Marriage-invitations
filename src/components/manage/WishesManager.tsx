@@ -8,7 +8,7 @@ export interface WishRow {
   createdAt: string;
 }
 
-export function WishesManager({ invitationId, wishes, setWishes }: { invitationId: string; wishes: WishRow[]; setWishes: React.Dispatch<React.SetStateAction<WishRow[]>> }) {
+export function WishesManager({ invitationId, wishes, setWishes, readOnly = false }: { invitationId: string; wishes: WishRow[]; setWishes: React.Dispatch<React.SetStateAction<WishRow[]>>; readOnly?: boolean }) {
   async function toggle(w: WishRow) {
     setWishes((l) => l.map((x) => (x.id === w.id ? { ...x, hidden: !w.hidden } : x)));
     await fetch(`/api/invitations/${invitationId}/wishes/${w.id}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ hidden: !w.hidden }) });
@@ -32,6 +32,7 @@ export function WishesManager({ invitationId, wishes, setWishes }: { invitationI
               {w.name}
               <span className="ms-2 font-normal text-stone-400">{new Date(w.createdAt).toLocaleDateString("ar-u-nu-latn")}</span>
             </span>
+            {!readOnly && (
             <span className="flex gap-3">
               <button className="text-stone-600 hover:underline" onClick={() => toggle(w)}>
                 {w.hidden ? "إظهار" : "إخفاء"}
@@ -40,6 +41,7 @@ export function WishesManager({ invitationId, wishes, setWishes }: { invitationI
                 حذف
               </button>
             </span>
+            )}
           </div>
         </div>
       ))}

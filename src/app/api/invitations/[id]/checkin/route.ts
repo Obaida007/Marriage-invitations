@@ -2,13 +2,13 @@ import { NextResponse, type NextRequest } from "next/server";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { getDb, schema } from "@/lib/db";
-import { jsonError, readJson, requireManaged } from "@/lib/api";
+import { jsonError, readJson, requireAccess } from "@/lib/api";
 import { getGuestByToken } from "@/lib/data";
 
 /** Looks up a guest by their pass code and marks them as checked in. */
 export async function POST(req: NextRequest, ctx: RouteContext<"/api/invitations/[id]/checkin">) {
   const { id } = await ctx.params;
-  const auth = await requireManaged(req, id);
+  const auth = await requireAccess(id, "checkin");
   if (!auth.ok) return auth.response;
   const body = await readJson(req, z.object({ token: z.string().trim().min(4).max(64) }));
   if (!body.ok) return body.response;

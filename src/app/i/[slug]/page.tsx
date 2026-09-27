@@ -6,7 +6,8 @@ import { coupleTitle } from "@/lib/couple";
 import { getGuestByToken, getInvitationBySlug, listWishes } from "@/lib/data";
 import { formatGregorian } from "@/lib/dates";
 import { getOrigin } from "@/lib/origin";
-import { manageKeyFromCookies, verifyKey } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth";
+import { getInvitationAccess } from "@/lib/data";
 
 const load = cache(async (slug: string) => getInvitationBySlug(slug));
 
@@ -34,7 +35,8 @@ export default async function InvitationPage(props: PageProps<"/i/[slug]">) {
   const { g } = await props.searchParams;
   const inv = await load(slug);
   if (!inv) notFound();
-  if (!inv.published && !verifyKey(await manageKeyFromCookies(inv.id), inv.manageKeyHash)) notFound();
+  // Hidden invitations stay visible to their own users and admins.
+  if (!inv.published && !(await getInvitationAccess(inv.id, await getCurrentUser()))) notFound();
 
   const [guest, wishes, origin] = await Promise.all([
     getGuestByToken(inv.id, typeof g === "string" ? g : undefined),

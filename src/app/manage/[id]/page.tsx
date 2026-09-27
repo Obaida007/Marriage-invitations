@@ -1,40 +1,35 @@
 import type { Metadata } from "next";
-import { getInvitationById, getManagedInvitation, guestStats, listGuests, listWishes } from "@/lib/data";
-import { manageKeyFromCookies } from "@/lib/auth";
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import { requirePageUser } from "@/lib/auth";
+import { getInvitationAccess, listGuests, listMembers, listWishes } from "@/lib/data";
 import { getOrigin } from "@/lib/origin";
-import { SiteHeader } from "@/components/ui/SiteHeader";
-import { ManageLogin } from "@/components/manage/ManageLogin";
+import { AppHeader } from "@/components/ui/AppHeader";
 import { ManageDashboard } from "@/components/manage/ManageDashboard";
 import { coupleTitle } from "@/lib/couple";
-import { notFound } from "next/navigation";
 
 export const metadata: Metadata = { title: "إدارة الدعوة", robots: { index: false, follow: false } };
 
 export default async function ManagePage(props: PageProps<"/manage/[id]">) {
   const { id } = await props.params;
-  const { error, welcome } = await props.searchParams;
-  const key = await manageKeyFromCookies(id);
-  const inv = await getManagedInvitation(id, key);
+  const user = await requirePageUser();
+  const found = await getInvitationAccess(id, user);
+  // Same response for "doesn't exist" and "not yours", so ids can't be probed.
+  if (!found) notFound();
+  const { inv, access } = found;
 
-  if (!inv) {
-    if (!(await getInvitationById(id))) notFound();
-    return (
-      <>
-        <SiteHeader />
-        <ManageLogin id={id} error={error === "1"} />
-      </>
-    );
-  }
-
-  const [guests, wishes, origin] = await Promise.all([listGuests(id), listWishes(id, true), getOrigin()]);
+  const [guests, wishes, members, origin] = await Promise.all([listGuests(id), listWishes(id, true), listMembers(id), getOrigin()]);
 
   return (
     <>
-      <SiteHeader>
+      <AppHeader user={user}>
+        <Link href={user.role === "admin" ? "/admin" : "/my"} className="btn-ghost sm:hidden">
+          ←
+        </Link>
         <a href={`/i/${inv.slug}`} target="_blank" className="btn-ghost">
           عرض الدعوة ↗
         </a>
-      </SiteHeader>
+      </AppHeader>
       <ManageDashboard
         id={inv.id}
         slug={inv.slug}
@@ -43,10 +38,10 @@ export default async function ManagePage(props: PageProps<"/manage/[id]">) {
         published={inv.published}
         views={inv.views}
         origin={origin}
-        manageKey={key!}
-        welcome={welcome === "1"}
+        access={access}
+        maxGuests={inv.maxGuests}
+        members={members.map((m) => ({ ...m, lastLoginAt: m.lastLoginAt?.toISOString() ?? null }))}
         initialGuests={guests.map(serializeGuest)}
-        initialStats={guestStats(guests)}
         initialWishes={wishes.map((w) => ({ id: w.id, name: w.name, message: w.message, hidden: w.hidden, createdAt: w.createdAt.toISOString() }))}
       />
     </>

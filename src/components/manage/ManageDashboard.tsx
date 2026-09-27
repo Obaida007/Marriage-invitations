@@ -10,6 +10,8 @@ import { GuestsManager, type GuestRow } from "./GuestsManager";
 import { WishesManager, type WishRow } from "./WishesManager";
 import { CheckinPanel } from "./CheckinPanel";
 import { CopyButton } from "./CopyButton";
+import { AccessPanel, type Member } from "./AccessPanel";
+import type { Access } from "@/lib/permissions";
 
 const TABS = [
   { id: "overview", label: "نظرة عامة", icon: "📊" },
@@ -17,6 +19,7 @@ const TABS = [
   { id: "edit", label: "تعديل الدعوة", icon: "✏️" },
   { id: "wishes", label: "التهاني", icon: "💌" },
   { id: "checkin", label: "الاستقبال", icon: "🎫" },
+  { id: "access", label: "الوصول", icon: "🔐" },
   { id: "settings", label: "الإعدادات", icon: "⚙️" },
 ] as const;
 type TabId = (typeof TABS)[number]["id"];
@@ -44,13 +47,13 @@ export function ManageDashboard(props: {
   published: boolean;
   views: number;
   origin: string;
-  manageKey: string;
-  welcome: boolean;
+  access: Access;
+  members: Member[];
+  maxGuests: number | null;
   initialGuests: GuestRow[];
-  initialStats: GuestStats;
   initialWishes: WishRow[];
 }) {
-  const { id, origin, manageKey } = props;
+  const { id, origin, access } = props;
   const router = useRouter();
   const [tab, setTab] = useState<TabId>("overview");
   const [slug, setSlug] = useState(props.slug);
@@ -58,21 +61,22 @@ export function ManageDashboard(props: {
   const [guests, setGuests] = useState<GuestRow[]>(props.initialGuests);
   const [wishes, setWishes] = useState<WishRow[]>(props.initialWishes);
   const [published, setPublished] = useState(props.published);
-  const [showWelcome, setShowWelcome] = useState(props.welcome);
   const stats = computeStats(guests);
   const publicUrl = `${origin}/i/${slug}`;
-  const manageUrl = `${origin}/manage/${id}/access?key=${manageKey}`;
+  const tabs = TABS.filter(
+    (t) =>
+      (t.id !== "edit" || access.canEdit) &&
+      (t.id !== "checkin" || access.canCheckIn) &&
+      (t.id !== "access" || access.canManageAccess) &&
+      (t.id !== "settings" || access.canEdit || access.canDelete),
+  );
 
   useEffect(() => {
     const fromUrl = new URLSearchParams(window.location.search).get("tab") as TabId | null;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- sync initial tab from the URL after hydration
-    if (fromUrl && TABS.some((t) => t.id === fromUrl)) setTab(fromUrl);
-    if (props.welcome) {
-      const url = new URL(window.location.href);
-      url.searchParams.delete("welcome");
-      window.history.replaceState(null, "", url);
-    }
-  }, [props.welcome]);
+    if (fromUrl && tabs.some((t) => t.id === fromUrl)) setTab(fromUrl);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount
+  }, []);
 
   function selectTab(t: TabId) {
     setTab(t);
@@ -91,30 +95,19 @@ export function ManageDashboard(props: {
   async function deleteInvitation() {
     if (!confirm("سيتم حذف الدعوة وجميع الضيوف والتهاني نهائياً. هل أنت متأكد؟")) return;
     const res = await fetch(`/api/invitations/${id}`, { method: "DELETE" });
-    if (res.ok) router.push("/");
+    if (res.ok) router.push("/admin");
   }
 
   return (
     <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6">
-      {showWelcome && (
-        <div className="card mb-6 border-emerald-200 bg-emerald-50/60 p-5">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h2 className="text-lg font-extrabold text-emerald-900">🎉 تم إنشاء دعوتك بنجاح!</h2>
-              <p className="mt-1 text-sm text-emerald-900/80">
-                احفظ <b>رابط الإدارة</b> التالي في مكان آمن — هو الطريقة الوحيدة للعودة إلى لوحة التحكم من جهاز آخر. لا تشاركه مع الضيوف.
-              </p>
-            </div>
-            <button className="text-emerald-900/60 hover:text-emerald-900" onClick={() => setShowWelcome(false)} aria-label="إغلاق">
-              ✕
-            </button>
-          </div>
-          <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-            <code className="flex-1 truncate rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-sm" dir="ltr">
-              {manageUrl}
-            </code>
-            <CopyButton text={manageUrl} label="نسخ رابط الإدارة" />
-          </div>
+      {access.locked && (
+        <div className="card mb-6 border-amber-200 bg-amber-50 p-4 text-amber-900">
+          <b>🔒 انتهى موعد المناسبة</b> — الدعوة متاحة الآن للعرض فقط: يمكنك مراجعة المدعوين والردود والتهاني وتصدير القائمة، دون تعديل.
+        </div>
+      )}
+      {!access.locked && access.role === "owner" && access.unlockUntil && new Date(access.lockAt) < new Date() && (
+        <div className="card mb-6 border-sky-200 bg-sky-50 p-4 text-sky-900">
+          ✏️ سمحت الإدارة بالتعديل مؤقتاً حتى {new Date(access.unlockUntil).toLocaleString("ar-u-nu-latn")}.
         </div>
       )}
 
@@ -131,7 +124,7 @@ export function ManageDashboard(props: {
       </div>
 
       <nav className="-mx-4 mb-6 flex gap-1 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0" aria-label="أقسام الإدارة">
-        {TABS.map((t) => (
+        {tabs.map((t) => (
           <button
             key={t.id}
             onClick={() => selectTab(t.id)}
@@ -202,7 +195,7 @@ export function ManageDashboard(props: {
                 <Step done={stats.total > 0} onClick={() => selectTab("guests")}>
                   أضف قائمة الضيوف لإرسال رابط شخصي لكل ضيف
                 </Step>
-                <Step done={!!content.media.coverImage || content.media.gallery.length > 0} onClick={() => selectTab("edit")}>
+                <Step done={!!content.media.coverImage || content.media.gallery.length > 0} onClick={() => access.canEdit && selectTab("edit")}>
                   أضف صورة غلاف أو صوراً للمعرض
                 </Step>
                 <Step done={stats.opened > 0} onClick={() => selectTab("guests")}>
@@ -217,12 +210,13 @@ export function ManageDashboard(props: {
         </div>
       )}
 
-      {tab === "guests" && <GuestsManager invitationId={id} slug={slug} title={props.title} origin={origin} guests={guests} setGuests={setGuests} stats={stats} />}
+      {tab === "guests" && <GuestsManager invitationId={id} slug={slug} title={props.title} origin={origin} guests={guests} setGuests={setGuests} stats={stats} readOnly={!access.canManageGuests} maxGuests={props.maxGuests} />}
 
       {tab === "edit" && (
         <InvitationEditor
           mode="edit"
           id={id}
+          coreLocked={!access.canEditCoreFields}
           initial={content}
           initialSlug={slug}
           onSaved={(s, c) => {
@@ -232,23 +226,20 @@ export function ManageDashboard(props: {
         />
       )}
 
-      {tab === "wishes" && <WishesManager invitationId={id} wishes={wishes} setWishes={setWishes} />}
+      {tab === "wishes" && <WishesManager invitationId={id} wishes={wishes} setWishes={setWishes} readOnly={!access.canModerateWishes} />}
 
       {tab === "checkin" && <CheckinPanel invitationId={id} guests={guests} setGuests={setGuests} stats={stats} />}
 
+      {tab === "access" && <AccessPanel invitationId={id} initialMembers={props.members} initialMaxGuests={props.maxGuests} initialUnlockUntil={access.unlockUntil} lockAt={access.lockAt} />}
+
       {tab === "settings" && (
         <div className="max-w-2xl space-y-4">
-          <div className="card p-5">
-            <Toggle label="الدعوة منشورة" hint="عند الإخفاء لن يتمكن الضيوف من فتح الدعوة (يمكنك أنت معاينتها)" checked={published} onChange={togglePublished} />
-          </div>
-          <div className="card space-y-3 p-5">
-            <h2 className="font-bold">🔐 رابط الإدارة</h2>
-            <p className="text-sm text-stone-600">احتفظ به لنفسك أو شاركه مع شريك التنظيم فقط. أي شخص يملكه يستطيع تعديل الدعوة.</p>
-            <code className="block truncate rounded-xl bg-soft px-3 py-2.5 text-sm" dir="ltr">
-              {manageUrl}
-            </code>
-            <CopyButton text={manageUrl} label="نسخ رابط الإدارة" />
-          </div>
+          {access.canEdit && (
+            <div className="card p-5">
+              <Toggle label="الدعوة منشورة" hint="عند الإخفاء لن يتمكن الضيوف من فتح الدعوة (يمكنك أنت معاينتها)" checked={published} onChange={togglePublished} />
+            </div>
+          )}
+          {access.canDelete && (
           <div className="card space-y-3 border-red-200 p-5">
             <h2 className="font-bold text-red-700">منطقة الخطر</h2>
             <p className="text-sm text-stone-600">حذف الدعوة نهائي ولا يمكن التراجع عنه.</p>
@@ -256,6 +247,7 @@ export function ManageDashboard(props: {
               حذف الدعوة نهائياً
             </button>
           </div>
+          )}
         </div>
       )}
     </main>

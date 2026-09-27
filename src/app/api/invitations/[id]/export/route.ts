@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { requireManaged } from "@/lib/api";
+import { requireAccess } from "@/lib/api";
 import { listGuests } from "@/lib/data";
 
 const STATUS = { pending: "بانتظار الرد", attending: "سيحضر", declined: "معتذر" } as const;
@@ -14,7 +14,7 @@ function csvCell(v: unknown) {
 
 export async function GET(req: NextRequest, ctx: RouteContext<"/api/invitations/[id]/export">) {
   const { id } = await ctx.params;
-  const auth = await requireManaged(req, id);
+  const auth = await requireAccess(id, "view");
   if (!auth.ok) return auth.response;
   const list = await listGuests(id);
   const origin = req.nextUrl.origin;

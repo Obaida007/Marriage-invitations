@@ -33,8 +33,8 @@ export default async function DemoPage(props: PageProps<"/demo/[theme]">) {
         ]}
       />
       <div className="fixed inset-x-0 bottom-4 z-40 flex justify-center px-4">
-        <Link href={`/create?theme=${th.id}`} className="btn-primary rounded-full px-6 py-3 shadow-xl">
-          ✨ استخدم هذا القالب لدعوتك
+        <Link href="/" className="btn-primary rounded-full px-6 py-3 shadow-xl">
+          ✨ اطلب دعوتك بهذا القالب
         </Link>
       </div>
     </>

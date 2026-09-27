@@ -1,25 +1,29 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { getDb, schema } from "@/lib/db";
-import { hashKey, manageCookieName } from "@/lib/auth";
-import { newId, newManageKey, randomSlugSuffix } from "@/lib/ids";
+import { newId, randomSlugSuffix } from "@/lib/ids";
 import { invitationContentSchema, RESERVED_SLUGS, slugSchema } from "@/lib/invitation-schema";
-import { jsonError, rateLimit, readJson } from "@/lib/api";
+import { jsonError, readJson, requireAdmin } from "@/lib/api";
 import { suggestSlug } from "@/lib/slug";
 import { getInvitationBySlug } from "@/lib/data";
+import { contentRuleViolation } from "@/lib/permissions";
 
 const createSchema = z.object({
   slug: z.union([slugSchema, z.literal("")]).optional(),
   content: invitationContentSchema,
+  maxGuests: z.number().int().min(1).max(10000).nullable().optional(),
 });
 
+/** Only admins create occasions (and so decide their date). */
 export async function POST(req: NextRequest) {
-  const limited = rateLimit(req, "create", 20, 60 * 60 * 1000);
-  if (limited) return limited;
+  const auth = await requireAdmin();
+  if (!auth.ok) return auth.response;
 
   const body = await readJson(req, createSchema);
   if (!body.ok) return body.response;
   const { content } = body.data;
+  const rule = contentRuleViolation(content);
+  if (rule) return jsonError(rule, 422);
 
   let slug = body.data.slug || suggestSlug(content.couple.groomName, content.couple.brideName);
   if (RESERVED_SLUGS.has(slug)) return jsonError("هذا الرابط محجوز، اختر رابطاً آخر", 409);
@@ -29,17 +33,14 @@ export async function POST(req: NextRequest) {
   }
 
   const id = newId();
-  const manageKey = newManageKey();
   const db = await getDb();
-  await db.insert(schema.invitations).values({ id, slug, manageKeyHash: hashKey(manageKey), content });
-
-  const res = NextResponse.json({ id, slug, manageKey }, { status: 201 });
-  res.cookies.set(manageCookieName(id), manageKey, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 365,
+  await db.insert(schema.invitations).values({
+    id,
+    slug,
+    manageKeyHash: "",
+    content,
+    maxGuests: body.data.maxGuests ?? null,
+    createdBy: auth.user.id,
   });
-  return res;
+  return NextResponse.json({ id, slug }, { status: 201 });
 }

@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getDb, schema } from "@/lib/db";
-import { jsonError, rateLimit } from "@/lib/api";
+import { jsonError, rateLimit, requireUser } from "@/lib/api";
 import { newId } from "@/lib/ids";
 
 const LIMITS: Record<string, number> = {
@@ -36,6 +36,9 @@ function sniff(buf: Buffer, kind: string | null): string | null {
 export async function POST(req: NextRequest) {
   const limited = rateLimit(req, "media", 40, 60 * 60 * 1000);
   if (limited) return limited;
+  // Only signed-in users can upload (prevents anonymous use as file hosting).
+  const auth = await requireUser();
+  if (!auth.ok) return auth.response;
   const form = await req.formData().catch(() => null);
   const file = form?.get("file");
   if (!(file instanceof File)) return jsonError("لم يتم إرفاق ملف");

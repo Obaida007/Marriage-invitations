@@ -73,6 +73,7 @@ export function InvitationEditor({
   initial,
   id,
   initialSlug = "",
+  coreLocked = false,
   onSaved,
 }: {
   mode: "create" | "edit";
@@ -80,6 +81,8 @@ export function InvitationEditor({
   id?: string;
   initialSlug?: string;
   onSaved?: (slug: string, content: InvitationContent) => void;
+  /** Owners can't change the date, events, couple names, timezone or link. */
+  coreLocked?: boolean;
 }) {
   const router = useRouter();
   const [content, setContent] = useState<InvitationContent>(initial);
@@ -145,16 +148,13 @@ export function InvitationEditor({
       const res = await fetch(mode === "create" ? "/api/invitations" : `/api/invitations/${id}`, {
         method: mode === "create" ? "POST" : "PATCH",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ slug: slugTouched ? slug : autoSlug, content: parsed.data }),
+        body: JSON.stringify({ ...(coreLocked ? {} : { slug: slugTouched ? slug : autoSlug }), content: parsed.data }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "تعذر الحفظ");
       setDirty(false);
       if (mode === "create") {
-        try {
-          sessionStorage.setItem(`mk:${data.id}`, data.manageKey);
-        } catch {}
-        router.push(`/manage/${data.id}?welcome=1`);
+        router.push(`/manage/${data.id}?tab=access`);
       } else {
         setSlug(data.slug);
         setSavedAt(Date.now());
@@ -188,13 +188,18 @@ export function InvitationEditor({
 
       {/* ---------- Form ---------- */}
       <div className={`space-y-4 ${mobileView === "preview" ? "hidden lg:block" : ""}`}>
+        {coreLocked && (
+          <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900">
+            🔒 تاريخ ووقت المناسبة وأسماء العروسين ورابط الدعوة محددة من الإدارة ولا يمكن تعديلها. يمكنك تعديل كل ما عدا ذلك.
+          </div>
+        )}
         <Panel title="العروسان" icon="💍" defaultOpen>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="اسم العريس">
-              <input className="input" value={couple.groomName} maxLength={60} onChange={(e) => patch((c) => void (c.couple.groomName = e.target.value))} />
+              <input className="input disabled:bg-stone-100 disabled:text-stone-500" disabled={coreLocked} value={couple.groomName} maxLength={60} onChange={(e) => patch((c) => void (c.couple.groomName = e.target.value))} />
             </Field>
             <Field label="اسم العروس">
-              <input className="input" value={couple.brideName} maxLength={60} onChange={(e) => patch((c) => void (c.couple.brideName = e.target.value))} />
+              <input className="input disabled:bg-stone-100 disabled:text-stone-500" disabled={coreLocked} value={couple.brideName} maxLength={60} onChange={(e) => patch((c) => void (c.couple.brideName = e.target.value))} />
             </Field>
             <Field label="نسب العريس (اختياري)" hint="مثال: نجل السيد / أحمد عبدالله">
               <input className="input" value={couple.groomFamily} maxLength={120} onChange={(e) => patch((c) => void (c.couple.groomFamily = e.target.value))} />
@@ -259,7 +264,7 @@ export function InvitationEditor({
 
         <Panel title="الحفلات والمواعيد" icon="📅" defaultOpen={mode === "create"}>
           <Field label="المنطقة الزمنية لمكان الحفل" hint="يُعرض الوقت دائماً بتوقيت مكان الحفل، ويُحسب العد التنازلي بدقة للضيوف في أي دولة">
-            <select className="input" value={content.timezone} onChange={(e) => patch((c) => void (c.timezone = e.target.value))}>
+            <select className="input disabled:bg-stone-100" disabled={coreLocked} value={content.timezone} onChange={(e) => patch((c) => void (c.timezone = e.target.value))}>
               {TIMEZONES.map(([tz, label]) => (
                 <option key={tz} value={tz}>
                   {label} ({tz})
@@ -272,12 +277,13 @@ export function InvitationEditor({
               key={ev.id}
               event={ev}
               index={i}
-              canRemove={events.length > 1}
+              canRemove={events.length > 1 && !coreLocked}
+              lockTime={coreLocked}
               onChange={(fn) => patch((c) => fn(c.events[i]))}
               onRemove={() => patch((c) => void c.events.splice(i, 1))}
             />
           ))}
-          {events.length < 6 && (
+          {events.length < 6 && !coreLocked && (
             <button
               type="button"
               className="btn-ghost w-full border-dashed"
@@ -472,6 +478,7 @@ export function InvitationEditor({
 
         <SectionsPanel content={content} patch={patch} />
 
+        {!coreLocked && (
         <Panel title="رابط الدعوة" icon="🔗" defaultOpen={mode === "create"}>
           <Field label="الرابط المخصص" hint="أحرف إنجليزية صغيرة وأرقام وشرطات">
             <div className="flex items-stretch overflow-hidden rounded-xl border border-line bg-white focus-within:border-brand focus-within:ring-4 focus-within:ring-brand/15" dir="ltr">
@@ -493,6 +500,7 @@ export function InvitationEditor({
             {mode === "create" && slugState.available === false && !slugTouched && " — سنضيف لاحقة تلقائياً"}
           </p>
         </Panel>
+        )}
 
         {/* Save bar */}
         <div className="sticky bottom-3 z-20 flex flex-wrap items-center gap-3 rounded-2xl border border-line bg-white/95 p-3 shadow-lg backdrop-blur">
@@ -525,12 +533,14 @@ function EventEditor({
   event,
   index,
   canRemove,
+  lockTime = false,
   onChange,
   onRemove,
 }: {
   event: InvitationEvent;
   index: number;
   canRemove: boolean;
+  lockTime?: boolean;
   onChange: (fn: (e: InvitationEvent) => void) => void;
   onRemove: () => void;
 }) {
@@ -549,10 +559,10 @@ function EventEditor({
       </Field>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="يبدأ">
-          <input type="datetime-local" className="input" value={event.startsAt} onChange={(e) => e.target.value && onChange((ev) => void (ev.startsAt = e.target.value.slice(0, 16)))} />
+          <input type="datetime-local" className="input disabled:bg-stone-100 disabled:text-stone-500" disabled={lockTime} value={event.startsAt} onChange={(e) => e.target.value && onChange((ev) => void (ev.startsAt = e.target.value.slice(0, 16)))} />
         </Field>
         <Field label="ينتهي (اختياري)">
-          <input type="datetime-local" className="input" value={event.endsAt} onChange={(e) => onChange((ev) => void (ev.endsAt = e.target.value.slice(0, 16)))} />
+          <input type="datetime-local" className="input disabled:bg-stone-100 disabled:text-stone-500" disabled={lockTime} value={event.endsAt} onChange={(e) => onChange((ev) => void (ev.endsAt = e.target.value.slice(0, 16)))} />
         </Field>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">

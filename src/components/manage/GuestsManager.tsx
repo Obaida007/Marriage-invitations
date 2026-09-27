@@ -57,6 +57,8 @@ export function GuestsManager({
   guests,
   setGuests,
   stats,
+  readOnly = false,
+  maxGuests = null,
 }: {
   invitationId: string;
   slug: string;
@@ -65,6 +67,8 @@ export function GuestsManager({
   guests: GuestRow[];
   setGuests: React.Dispatch<React.SetStateAction<GuestRow[]>>;
   stats: GuestStats;
+  readOnly?: boolean;
+  maxGuests?: number | null;
 }) {
   const [mode, setMode] = useState<"single" | "bulk">("single");
   const [name, setName] = useState("");
@@ -142,6 +146,21 @@ export function GuestsManager({
     <div className="grid gap-6 lg:grid-cols-[360px_minmax(0,1fr)]">
       {/* Add guests */}
       <div className="space-y-4">
+        {maxGuests != null && (
+          <div className={`card p-4 text-sm ${guests.length >= maxGuests ? "border-amber-300 bg-amber-50" : ""}`}>
+            <div className="mb-1.5 flex justify-between">
+              <span className="font-bold">المدعوون حسب الباقة</span>
+              <span>
+                {guests.length} / {maxGuests}
+              </span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-stone-100">
+              <div className="h-full bg-brand" style={{ width: `${Math.min(100, (guests.length / maxGuests) * 100)}%` }} />
+            </div>
+          </div>
+        )}
+        {readOnly && <div className="card p-4 text-sm text-stone-600">🔒 القائمة للعرض فقط بعد انتهاء المناسبة.</div>}
+        {!readOnly && (
         <form onSubmit={add} className="card space-y-4 p-5">
           <div className="flex gap-1 rounded-xl bg-soft p-1">
             {(["single", "bulk"] as const).map((m) => (
@@ -187,7 +206,9 @@ export function GuestsManager({
             {busy && <Spinner />} إضافة
           </button>
         </form>
+        )}
 
+        {!readOnly && (
         <div className="card space-y-3 p-5">
           <button type="button" className="flex w-full items-center justify-between font-bold" onClick={() => setShowTemplate((v) => !v)}>
             💬 نص رسالة واتساب
@@ -214,6 +235,7 @@ export function GuestsManager({
             </>
           )}
         </div>
+        )}
 
         <div className="card grid grid-cols-3 divide-x divide-line p-0 text-center">
           <MiniStat label="ضيف" value={stats.total} />
@@ -246,7 +268,7 @@ export function GuestsManager({
         </div>
 
         {filtered.length === 0 ? (
-          <div className="card p-10 text-center text-stone-500">{guests.length === 0 ? "لم تتم إضافة ضيوف بعد. أضف أول ضيف من النموذج 👈" : "لا توجد نتائج مطابقة"}</div>
+          <div className="card p-10 text-center text-stone-500">{guests.length === 0 ? (readOnly ? "لا يوجد مدعوون" : "لم تتم إضافة ضيوف بعد. أضف أول ضيف من النموذج 👈") : "لا توجد نتائج مطابقة"}</div>
         ) : (
           <ul className="space-y-2">
             {filtered.map((g) => (
@@ -272,6 +294,7 @@ export function GuestsManager({
                     {g.note && <p className="mt-2 rounded-lg bg-soft px-3 py-1.5 text-sm text-stone-700">📝 {g.note}</p>}
                   </div>
                   <div className="flex flex-wrap gap-1.5">
+                    {!readOnly && (
                     <a
                       className="btn bg-[#25D366] px-3 py-2 text-white hover:brightness-95"
                       target="_blank"
@@ -281,13 +304,18 @@ export function GuestsManager({
                     >
                       واتساب
                     </a>
+                    )}
                     <CopyButton text={guestUrl(g)} label="نسخ الرابط" className="btn-ghost px-3 py-2" />
-                    <button className="btn-ghost px-3 py-2" onClick={() => setEditing(g)}>
-                      تعديل
-                    </button>
-                    <button className="btn-ghost px-3 py-2 text-red-600" onClick={() => remove(g)} aria-label="حذف">
-                      🗑
-                    </button>
+                    {!readOnly && (
+                      <>
+                        <button className="btn-ghost px-3 py-2" onClick={() => setEditing(g)}>
+                          تعديل
+                        </button>
+                        <button className="btn-ghost px-3 py-2 text-red-600" onClick={() => remove(g)} aria-label="حذف">
+                          🗑
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               </li>

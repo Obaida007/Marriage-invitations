@@ -24,9 +24,11 @@ export const db = drizzle(client, { schema });
 
 /** Applies pending migrations once per process before the first query. */
 export async function getDb() {
-  globalForDb.__migrated ??= migrate(db, {
-    migrationsFolder: path.join(process.cwd(), "drizzle"),
-  }).catch((err) => {
+  globalForDb.__migrated ??= (async () => {
+    // Needed for ON DELETE CASCADE (guests, wishes, members, sessions).
+    await client.execute("PRAGMA foreign_keys = ON");
+    await migrate(db, { migrationsFolder: path.join(process.cwd(), "drizzle") });
+  })().catch((err) => {
     globalForDb.__migrated = undefined;
     throw err;
   });

@@ -17,11 +17,16 @@ const FEATURES = [
   { icon: "📊", title: "لوحة تحكم كاملة", text: "إضافة الضيوف دفعة واحدة، إرسال عبر واتساب، وتصدير القائمة إلى Excel." },
   { icon: "🎥", title: "خلفية صورة أو فيديو", text: "صورة أو فيديو قصير خلف القسم الأول أو خلف الدعوة كاملة، مع التحكم بالشفافية والتمويه." },
   { icon: "🎲", title: "تصميم لا يتكرر", text: "٥ تخطيطات وأشكال للتاريخ والعدّاد والبطاقات، وزر «فاجئني» يولّد تصميماً فريداً بضغطة." },
-  { icon: "🔒", title: "خصوصية بلا حساب", text: "لا حاجة للتسجيل؛ رابط إدارة سري خاص بك، وخيار إخفاء اسم العروس." },
+  { icon: "🔒", title: "حساب خاص لكل مناسبة", text: "مستخدمان لكل دعوة يديرانها ويتابعان الردود، مع قفل تاريخ المناسبة وأرشفتها تلقائياً بعد انتهائها." },
 ];
 
+// Set NEXT_PUBLIC_ORDER_WHATSAPP (international format) to take orders on WhatsApp.
+const ORDER_PHONE = process.env.NEXT_PUBLIC_ORDER_WHATSAPP?.replace(/[^\d]/g, "");
+const ORDER_URL = ORDER_PHONE ? `https://wa.me/${ORDER_PHONE}?text=${encodeURIComponent("السلام عليكم، أرغب بطلب دعوة زفاف إلكترونية")}` : "/login";
+const ORDER_PROPS = ORDER_PHONE ? { target: "_blank", rel: "noopener noreferrer" } : {};
+
 const STEPS = [
-  { n: "١", title: "صمّم دعوتك", text: "اختر القالب واكتب الأسماء والمواعيد وشاهد النتيجة مباشرة." },
+  { n: "١", title: "اطلب دعوتك", text: "نجهّز مناسبتك بتاريخها ونسلّمك حساب الدخول، ثم تخصّص التصميم كما تحب بمعاينة مباشرة." },
   { n: "٢", title: "أضف ضيوفك", text: "الصق قائمة الأسماء وأرقام الجوال لتحصل على رابط شخصي لكل ضيف." },
   { n: "٣", title: "أرسل وتابع", text: "أرسل عبر واتساب بضغطة، وتابع الردود وامسح بطاقات الدخول يوم الحفل." },
 ];
@@ -30,9 +35,12 @@ export default function Home() {
   return (
     <>
       <SiteHeader>
-        <Link href="/create" className="btn-primary">
-          أنشئ دعوتك
+        <Link href="/login" className="btn-ghost">
+          تسجيل الدخول
         </Link>
+        <a href={ORDER_URL} className="btn-primary hidden sm:inline-flex" {...ORDER_PROPS}>
+          اطلب دعوتك
+        </a>
       </SiteHeader>
 
       <main className="flex-1">
@@ -48,12 +56,12 @@ export default function Home() {
                 <span className="text-brand">برابط واحد أنيق</span>
               </h1>
               <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-stone-600 lg:mx-0">
-                أنشئ دعوة زفاف تفاعلية في دقائق: ظرف متحرك، عدّاد تنازلي، موقع الحفل، تأكيد حضور، رابط شخصي باسم كل ضيف، وبطاقة دخول QR — كل ذلك مجاناً ودون تسجيل.
+                أنشئ دعوة زفاف تفاعلية في دقائق: ظرف متحرك، عدّاد تنازلي، موقع الحفل، تأكيد حضور، رابط شخصي باسم كل ضيف، وبطاقة دخول QR — وتديرها بحسابك الخاص.
               </p>
               <div className="mt-8 flex flex-wrap justify-center gap-3 lg:justify-start">
-                <Link href="/create" className="btn-primary px-7 py-3.5 text-base">
-                  ابدأ التصميم الآن ✨
-                </Link>
+                <a href={ORDER_URL} {...ORDER_PROPS} className="btn-primary px-7 py-3.5 text-base">
+                  اطلب دعوتك الآن ✨
+                </a>
                 <Link href="/demo/royal-gold" className="btn-ghost px-7 py-3.5 text-base">
                   شاهد مثالاً حياً
                 </Link>
@@ -156,9 +164,9 @@ export default function Home() {
             ))}
           </div>
           <div className="mt-12 text-center">
-            <Link href="/create" className="btn-primary px-8 py-4 text-base">
-              أنشئ دعوتك مجاناً
-            </Link>
+            <a href={ORDER_URL} {...ORDER_PROPS} className="btn-primary px-8 py-4 text-base">
+              اطلب دعوتك
+            </a>
           </div>
         </section>
       </main>
