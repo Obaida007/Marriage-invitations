@@ -1,6 +1,24 @@
 @import "tailwindcss";
 
 :root {
+  /* Font families (self-hosted, see src/lib/fonts.ts) */
+  --f-amiri: "Amiri";
+  --f-aref-ruqaa: "Aref Ruqaa";
+  --f-reem-kufi: "Reem Kufi";
+  --f-el-messiri: "El Messiri";
+  --f-lateef: "Lateef";
+  --f-cairo: "Cairo";
+  --f-tajawal: "Tajawal";
+  --f-rakkas: "Rakkas";
+  --f-mirza: "Mirza";
+  --f-scheherazade: "Scheherazade New";
+  --f-noto-kufi: "Noto Kufi Arabic";
+  --f-almarai: "Almarai";
+  --f-changa: "Changa";
+  --f-playfair: "Playfair Display";
+  --f-cormorant: "Cormorant Garamond";
+  --f-great-vibes: "Great Vibes";
+
   --background: #fbf8f3;
   --foreground: #2b2118;
   --brand: #a8804a;

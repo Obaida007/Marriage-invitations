@@ -1,41 +1,42 @@
-import {
-  Almarai,
-  Amiri,
-  Aref_Ruqaa,
-  Cairo,
-  Changa,
-  Cormorant_Garamond,
-  El_Messiri,
-  Great_Vibes,
-  Lateef,
-  Mirza,
-  Noto_Kufi_Arabic,
-  Playfair_Display,
-  Rakkas,
-  Reem_Kufi,
-  Scheherazade_New,
-  Tajawal,
-} from "next/font/google";
-
-const amiri = Amiri({ subsets: ["arabic", "latin"], weight: ["400", "700"], variable: "--f-amiri", display: "swap" });
-const arefRuqaa = Aref_Ruqaa({ subsets: ["arabic", "latin"], weight: ["400", "700"], variable: "--f-aref-ruqaa", display: "swap", preload: false });
-const reemKufi = Reem_Kufi({ subsets: ["arabic", "latin"], variable: "--f-reem-kufi", display: "swap", preload: false });
-const elMessiri = El_Messiri({ subsets: ["arabic", "latin"], variable: "--f-el-messiri", display: "swap", preload: false });
-const lateef = Lateef({ subsets: ["arabic", "latin"], weight: ["400", "700"], variable: "--f-lateef", display: "swap", preload: false });
-const cairo = Cairo({ subsets: ["arabic", "latin"], variable: "--f-cairo", display: "swap" });
-const tajawal = Tajawal({ subsets: ["arabic", "latin"], weight: ["400", "500", "700"], variable: "--f-tajawal", display: "swap", preload: false });
-const rakkas = Rakkas({ subsets: ["arabic", "latin"], weight: "400", variable: "--f-rakkas", display: "swap", preload: false });
-const mirza = Mirza({ subsets: ["arabic", "latin"], weight: ["400", "600"], variable: "--f-mirza", display: "swap", preload: false });
-const scheherazade = Scheherazade_New({ subsets: ["arabic", "latin"], weight: ["400", "700"], variable: "--f-scheherazade", display: "swap", preload: false });
-const notoKufi = Noto_Kufi_Arabic({ subsets: ["arabic", "latin"], variable: "--f-noto-kufi", display: "swap", preload: false });
-const almarai = Almarai({ subsets: ["arabic"], weight: ["300", "400", "700"], variable: "--f-almarai", display: "swap", preload: false });
-const changa = Changa({ subsets: ["arabic", "latin"], variable: "--f-changa", display: "swap", preload: false });
-const playfair = Playfair_Display({ subsets: ["latin"], variable: "--f-playfair", display: "swap", preload: false });
-const cormorant = Cormorant_Garamond({ subsets: ["latin"], weight: ["400", "600"], variable: "--f-cormorant", display: "swap", preload: false });
-const greatVibes = Great_Vibes({ subsets: ["latin"], weight: "400", variable: "--f-great-vibes", display: "swap", preload: false });
-
-export const fontVariables = [
-  amiri, arefRuqaa, reemKufi, elMessiri, lateef, cairo, tajawal, rakkas, mirza, scheherazade, notoKufi, almarai, changa, playfair, cormorant, greatVibes,
-]
-  .map((f) => f.variable)
-  .join(" ");
+/**
+ * Self-hosted fonts (Fontsource). Each CSS file declares @font-face rules split
+ * by unicode-range, so browsers only download the subsets and families a page
+ * actually uses. Self-hosting avoids fetching Google Fonts at build/dev time,
+ * which breaks Turbopack when Google serves `/l/font?kit=…&…` URLs.
+ *
+ * The `--f-*` variables that point at these families live in globals.css.
+ */
+import "@fontsource/amiri/400.css";
+import "@fontsource/amiri/700.css";
+import "@fontsource/aref-ruqaa/400.css";
+import "@fontsource/aref-ruqaa/700.css";
+import "@fontsource/reem-kufi/400.css";
+import "@fontsource/reem-kufi/600.css";
+import "@fontsource/el-messiri/400.css";
+import "@fontsource/el-messiri/600.css";
+import "@fontsource/lateef/400.css";
+import "@fontsource/lateef/700.css";
+import "@fontsource/cairo/400.css";
+import "@fontsource/cairo/600.css";
+import "@fontsource/cairo/700.css";
+import "@fontsource/cairo/800.css";
+import "@fontsource/tajawal/400.css";
+import "@fontsource/tajawal/500.css";
+import "@fontsource/tajawal/700.css";
+import "@fontsource/rakkas/400.css";
+import "@fontsource/mirza/400.css";
+import "@fontsource/mirza/600.css";
+import "@fontsource/scheherazade-new/400.css";
+import "@fontsource/scheherazade-new/700.css";
+import "@fontsource/noto-kufi-arabic/400.css";
+import "@fontsource/noto-kufi-arabic/600.css";
+import "@fontsource/almarai/300.css";
+import "@fontsource/almarai/400.css";
+import "@fontsource/almarai/700.css";
+import "@fontsource/changa/400.css";
+import "@fontsource/changa/600.css";
+import "@fontsource/playfair-display/400.css";
+import "@fontsource/playfair-display/600.css";
+import "@fontsource/cormorant-garamond/400.css";
+import "@fontsource/cormorant-garamond/600.css";
+import "@fontsource/great-vibes/400.css";
