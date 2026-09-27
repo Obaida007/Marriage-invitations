@@ -1,0 +1,214 @@
+@import "tailwindcss";
+
+:root {
+  --background: #fbf8f3;
+  --foreground: #2b2118;
+  --brand: #a8804a;
+  --brand-dark: #7d5b2e;
+  --card: #ffffff;
+  --line: #eadfcd;
+  --soft: #f4ecdf;
+  --muted: #7a6a58;
+
+  /* Invitation defaults (overridden per theme inline) */
+  --inv-bg: #fbf7ef;
+  --inv-surface: #fffdf8;
+  --inv-text: #3b2f1e;
+  --inv-muted: #8a7456;
+  --inv-accent: #b08d57;
+  --inv-accent-soft: #efe3cc;
+  --inv-border: #e3d3b3;
+  --inv-envelope: #e9dcc3;
+  --inv-seal: #8c2f39;
+  --inv-heading: var(--f-aref-ruqaa);
+  --inv-body: var(--f-amiri);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-brand: var(--brand);
+  --color-brand-dark: var(--brand-dark);
+  --color-card: var(--card);
+  --color-line: var(--line);
+  --color-soft: var(--soft);
+  --color-muted: var(--muted);
+
+  --color-inv-bg: var(--inv-bg);
+  --color-inv-surface: var(--inv-surface);
+  --color-inv-text: var(--inv-text);
+  --color-inv-muted: var(--inv-muted);
+  --color-inv-accent: var(--inv-accent);
+  --color-inv-accent-soft: var(--inv-accent-soft);
+  --color-inv-border: var(--inv-border);
+  --color-inv-envelope: var(--inv-envelope);
+  --color-inv-seal: var(--inv-seal);
+
+  --font-sans: var(--f-cairo), system-ui, sans-serif;
+  --font-heading: var(--inv-heading), serif;
+  --font-body: var(--inv-body), serif;
+  --font-amiri: var(--f-amiri), serif;
+  --font-display: var(--f-aref-ruqaa), serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--inv-accent) 30%, transparent);
+}
+
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-60;
+}
+
+@layer components {
+  /* ---------- Shared UI ---------- */
+  .input {
+    @apply w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-[15px] outline-none transition placeholder:text-stone-400 focus:border-brand focus:ring-4 focus:ring-brand/15;
+  }
+  .label {
+    @apply mb-1.5 block text-sm font-semibold text-stone-700;
+  }
+
+  .btn-primary {
+    @apply btn bg-brand text-white shadow-sm shadow-brand/30 hover:bg-brand-dark;
+  }
+  .btn-ghost {
+    @apply btn border border-line bg-white text-stone-700 hover:bg-soft;
+  }
+  .btn-danger {
+    @apply btn border border-red-200 bg-white text-red-700 hover:bg-red-50;
+  }
+  .card {
+    @apply rounded-2xl border border-line bg-card shadow-[0_1px_2px_rgba(60,40,10,.04)];
+  }
+
+  /* ---------- Invitation ---------- */
+  .inv-root {
+    background-color: var(--inv-bg);
+    color: var(--inv-text);
+    font-family: var(--font-body);
+  }
+
+  .inv-card {
+    background: var(--inv-surface);
+    border: 1px solid var(--inv-border);
+    border-radius: 1.5rem;
+    box-shadow: 0 10px 40px -20px color-mix(in srgb, var(--inv-accent) 45%, transparent);
+  }
+
+  .inv-btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-[15px] font-bold transition active:scale-[.97] disabled:opacity-60;
+    font-family: var(--f-cairo), sans-serif;
+    background: var(--inv-accent);
+    color: var(--inv-surface);
+  }
+  .inv-btn-outline {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-[15px] font-bold transition active:scale-[.97];
+    font-family: var(--f-cairo), sans-serif;
+    border: 1.5px solid var(--inv-accent);
+    color: var(--inv-accent);
+  }
+  .inv-btn-outline:hover {
+    background: var(--inv-accent-soft);
+  }
+
+  .inv-input {
+    @apply w-full rounded-2xl px-4 py-3 text-[15px] outline-none transition;
+    font-family: var(--f-cairo), sans-serif;
+    background: var(--inv-bg);
+    border: 1px solid var(--inv-border);
+    color: var(--inv-text);
+  }
+  .inv-input:focus {
+    border-color: var(--inv-accent);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--inv-accent) 18%, transparent);
+  }
+}
+
+.inv-shimmer {
+  background: linear-gradient(
+    110deg,
+    var(--inv-accent) 35%,
+    color-mix(in srgb, var(--inv-accent) 55%, white) 50%,
+    var(--inv-accent) 65%
+  );
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 6s linear infinite;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -250% 0;
+  }
+}
+
+/* Falling petals */
+.petal {
+  position: absolute;
+  top: -5%;
+  border-radius: 150% 0 150% 0;
+  background: color-mix(in srgb, var(--inv-accent) 55%, white);
+  opacity: 0.55;
+  animation: petal-fall linear infinite;
+}
+@keyframes petal-fall {
+  0% {
+    transform: translate3d(0, -10vh, 0) rotate(0deg);
+  }
+  100% {
+    transform: translate3d(var(--drift, 40px), 110vh, 0) rotate(540deg);
+  }
+}
+
+@keyframes float-soft {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+.float-soft {
+  animation: float-soft 4s ease-in-out infinite;
+}
+
+@keyframes spin-slow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.spin-slow {
+  animation: spin-slow 8s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .petal,
+  .inv-shimmer,
+  .float-soft,
+  .spin-slow {
+    animation: none !important;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* Hide number input spinners */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+}

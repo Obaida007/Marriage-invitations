@@ -1,0 +1,161 @@
+import { z } from "zod";
+
+const str = (max: number) => z.string().trim().max(max);
+const optionalUrl = z
+  .string()
+  .trim()
+  .max(2000)
+  .refine((v) => v === "" || v.startsWith("/") || /^https?:\/\//i.test(v), "رابط غير صالح")
+  .default("");
+
+export const THEME_IDS = ["royal-gold", "blush-floral", "night-royal", "olive-garden", "modern-minimal", "desert-sand"] as const;
+export const FONT_IDS = ["amiri", "aref-ruqaa", "reem-kufi", "el-messiri", "lateef", "cairo", "tajawal", "playfair"] as const;
+export const OPENING_PRESETS = ["bismillah", "quran-rum", "quran-naba", "none", "custom"] as const;
+export const EVENT_ICONS = ["rings", "hall", "dinner", "music", "camera", "cake", "car", "heart", "moon"] as const;
+
+export const eventSchema = z.object({
+  id: str(32),
+  title: str(80).min(1, "عنوان الحفل مطلوب"),
+  /** Local wall-clock time of the venue, "YYYY-MM-DDTHH:mm". */
+  startsAt: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/, "صيغة التاريخ غير صحيحة"),
+  endsAt: z
+    .string()
+    .regex(/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2})?$/)
+    .default(""),
+  venueName: str(120).default(""),
+  address: str(300).default(""),
+  mapUrl: optionalUrl,
+  /** Optional coordinates, used for the embedded map when present. */
+  lat: z.number().min(-90).max(90).nullable().default(null),
+  lng: z.number().min(-180).max(180).nullable().default(null),
+  note: str(200).default(""),
+});
+
+export const programItemSchema = z.object({
+  id: str(32),
+  time: str(20).default(""),
+  title: str(100).min(1),
+  icon: z.enum(EVENT_ICONS).default("heart"),
+});
+
+export const invitationContentSchema = z.object({
+  locale: z.enum(["ar", "en"]).default("ar"),
+
+  couple: z.object({
+    groomName: str(60).min(1, "اسم العريس مطلوب"),
+    brideName: str(60).min(1, "اسم العروس مطلوب"),
+    groomFamily: str(120).default(""),
+    brideFamily: str(120).default(""),
+    /** Show the bride's name first (common in some regions / English cards). */
+    brideFirst: z.boolean().default(false),
+    /** Hide the bride's name and show only initials (a common conservative preference). */
+    hideBrideName: z.boolean().default(false),
+  }),
+
+  texts: z.object({
+    opening: z.enum(OPENING_PRESETS).default("bismillah"),
+    customOpening: str(300).default(""),
+    hosts: str(300).default(""),
+    invitationLine: str(500).default(""),
+    closing: str(300).default(""),
+  }),
+
+  events: z.array(eventSchema).min(1, "أضف حفلاً واحداً على الأقل").max(6),
+  program: z.array(programItemSchema).max(15).default([]),
+  notes: z.array(str(160).min(1)).max(10).default([]),
+
+  media: z.object({
+    coverImage: optionalUrl,
+    gallery: z.array(optionalUrl).max(12).default([]),
+    musicUrl: optionalUrl,
+  }),
+
+  style: z.object({
+    theme: z.enum(THEME_IDS).default("royal-gold"),
+    accent: z
+      .string()
+      .regex(/^(#[0-9a-fA-F]{6})?$/)
+      .default(""),
+    headingFont: z.enum(FONT_IDS).default("aref-ruqaa"),
+    bodyFont: z.enum(FONT_IDS).default("amiri"),
+    envelope: z.boolean().default(true),
+    petals: z.boolean().default(true),
+  }),
+
+  features: z.object({
+    countdown: z.boolean().default(true),
+    hijriDate: z.boolean().default(true),
+    map: z.boolean().default(true),
+    calendar: z.boolean().default(true),
+    rsvp: z.boolean().default(true),
+    wishes: z.boolean().default(true),
+    gallery: z.boolean().default(true),
+    program: z.boolean().default(true),
+    music: z.boolean().default(false),
+    qrPass: z.boolean().default(true),
+  }),
+
+  rsvp: z.object({
+    deadline: z
+      .string()
+      .regex(/^(\d{4}-\d{2}-\d{2})?$/)
+      .default(""),
+    /** Allow anyone with the general link to RSVP (not only listed guests). */
+    openRsvp: z.boolean().default(true),
+    defaultCompanions: z.number().int().min(0).max(20).default(0),
+    askNote: z.boolean().default(true),
+  }),
+
+  contact: z.object({
+    name: str(60).default(""),
+    phone: str(30).default(""),
+  }),
+
+  timezone: str(64).default("Asia/Riyadh"),
+});
+
+export type InvitationContent = z.infer<typeof invitationContentSchema>;
+export type InvitationEvent = z.infer<typeof eventSchema>;
+export type ProgramItem = z.infer<typeof programItemSchema>;
+export type ThemeId = (typeof THEME_IDS)[number];
+export type FontId = (typeof FONT_IDS)[number];
+
+export const slugSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .min(3, "الرابط قصير جداً")
+  .max(48, "الرابط طويل جداً")
+  .regex(/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/, "استخدم أحرفاً إنجليزية صغيرة وأرقاماً وشرطات فقط");
+
+export const RESERVED_SLUGS = new Set(["api", "create", "manage", "admin", "new", "i", "demo", "templates"]);
+
+export const rsvpInputSchema = z.object({
+  slug: slugSchema,
+  guestToken: z.string().max(32).optional(),
+  name: str(80).min(2, "الاسم مطلوب"),
+  phone: str(30).optional().default(""),
+  status: z.enum(["attending", "declined"]),
+  attendingCount: z.number().int().min(0).max(21),
+  note: str(300).optional().default(""),
+});
+
+export const wishInputSchema = z.object({
+  slug: slugSchema,
+  guestToken: z.string().max(32).optional(),
+  name: str(80).min(2, "الاسم مطلوب"),
+  message: str(500).min(2, "اكتب تهنئتك"),
+});
+
+export const guestInputSchema = z.object({
+  name: str(80).min(1, "الاسم مطلوب"),
+  phone: str(30).optional().default(""),
+  side: z.enum(["groom", "bride", "both"]).default("both"),
+  maxCompanions: z.number().int().min(0).max(20).default(0),
+});
+
+export const guestPatchSchema = guestInputSchema.partial().extend({
+  status: z.enum(["pending", "attending", "declined"]).optional(),
+  attendingCount: z.number().int().min(0).max(21).optional(),
+  checkedIn: z.boolean().optional(),
+});
