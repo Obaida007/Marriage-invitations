@@ -17,21 +17,44 @@ function makeClient(): Client {
 const globalForDb = globalThis as unknown as {
   __client?: Client;
   __migrated?: Promise<void>;
+  __migratedFor?: number;
 };
+
+const migrationsFolder = path.join(process.cwd(), "drizzle");
+const journalPath = path.join(migrationsFolder, "meta", "_journal.json");
+
+/**
+ * Identifies the current set of migrations. In development the dev server (and
+ * this module's global state) survives `git pull` and hot reloads, so new
+ * migration files must trigger a re-run; production processes start fresh.
+ */
+function migrationsVersion() {
+  if (process.env.NODE_ENV === "production") return 0;
+  try {
+    return fs.statSync(journalPath).mtimeMs;
+  } catch {
+    return 0;
+  }
+}
 
 const client = (globalForDb.__client ??= makeClient());
 export const db = drizzle(client, { schema });
 
-/** Applies pending migrations once per process before the first query. */
+/** Applies pending migrations before the first query (and again if new ones appear). */
 export async function getDb() {
-  globalForDb.__migrated ??= (async () => {
-    // Needed for ON DELETE CASCADE (guests, wishes, members, sessions).
-    await client.execute("PRAGMA foreign_keys = ON");
-    await migrate(db, { migrationsFolder: path.join(process.cwd(), "drizzle") });
-  })().catch((err) => {
-    globalForDb.__migrated = undefined;
-    throw err;
-  });
+  const version = migrationsVersion();
+  if (!globalForDb.__migrated || globalForDb.__migratedFor !== version) {
+    globalForDb.__migratedFor = version;
+    globalForDb.__migrated = (async () => {
+      // Needed for ON DELETE CASCADE (guests, wishes, members, sessions).
+      await client.execute("PRAGMA foreign_keys = ON");
+      await migrate(db, { migrationsFolder });
+    })().catch((err) => {
+      globalForDb.__migrated = undefined;
+      console.error("[dawati] Database migration failed:", err);
+      throw err;
+    });
+  }
   await globalForDb.__migrated;
   return db;
 }
