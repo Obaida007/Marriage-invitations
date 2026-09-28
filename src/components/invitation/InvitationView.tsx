@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { SECTION_IDS, type InvitationContent, type SectionId } from "@/lib/invitation-schema";
-import { resolveStyle, styleVars, type CoverShape } from "@/lib/themes";
+import { luminance, resolveStyle, styleVars, type CoverShape } from "@/lib/themes";
 import { FONTS } from "@/lib/fonts-meta";
 import { OPENING_TEXT, t } from "@/lib/i18n";
 import { formatGregorian, formatNumber, zonedToDate } from "@/lib/dates";
@@ -15,7 +15,7 @@ import { Backdrop } from "./Backdrop";
 import { DateBlock } from "./DateBlock";
 import { Petals } from "./Petals";
 import { Countdown } from "./Countdown";
-import { Envelope } from "./Envelope";
+import { Intro } from "./Intro";
 import { MusicButton } from "./MusicButton";
 import { EventCard } from "./EventCard";
 import { RsvpSection, type PublicGuest } from "./RsvpSection";
@@ -40,7 +40,21 @@ export function InvitationView({ content, slug, guest: initialGuest = null, wish
   const d = t(locale);
   const rs = resolveStyle(style);
   const ornament = rs.ornament;
+  // Curtains read as velvet in the darker of the envelope/seal colors.
+  const velvet = luminance(rs.colors.seal) < luminance(rs.colors.envelope) ? rs.colors.seal : rs.colors.envelope;
   const [opened, setOpened] = useState(preview || !style.envelope);
+  // Editor preview: replay the opening scene on request (see DesignPanel).
+  const [replaying, setReplaying] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!preview) return;
+    const onReplay = () => {
+      rootRef.current?.parentElement?.scrollTo({ top: 0 });
+      setReplaying(true);
+    };
+    window.addEventListener("dawati:replay-intro", onReplay);
+    return () => window.removeEventListener("dawati:replay-intro", onReplay);
+  }, [preview]);
   const [guest, setGuest] = useState<PublicGuest | null>(initialGuest);
   const [playing, setPlaying] = useState(false);
   const [shareMsg, setShareMsg] = useState("");
@@ -327,6 +341,7 @@ export function InvitationView({ content, slug, guest: initialGuest = null, wish
   return (
     <RevealContext.Provider value={style.animation ?? "fade"}>
       <div
+        ref={rootRef}
         dir={d.dir}
         lang={locale}
         data-cards={rs.cardStyle}
@@ -334,7 +349,10 @@ export function InvitationView({ content, slug, guest: initialGuest = null, wish
         className="inv-root relative min-h-full overflow-x-clip"
         style={{ ...rootStyle, ...(scope === "page" ? heroVars : {}) }}
       >
-        {!preview && <Envelope open={opened} onOpen={handleOpen} initials={monogram} guestName={guest?.name} d={d} />}
+        {!preview && <Intro variant={rs.envelopeStyle} open={opened} onOpen={handleOpen} monogram={monogram} title={title} guestName={guest?.name} ornament={ornament} velvet={velvet} d={d} />}
+        {preview && (
+          <Intro variant={rs.envelopeStyle} open={!replaying} onOpen={() => setReplaying(false)} monogram={monogram} title={title} guestName={guest?.name} ornament={ornament} velvet={velvet} d={d} contained />
+        )}
         {!preview && opened && style.petals && <Petals shape={rs.particle} />}
         {musicOn && <audio ref={audioRef} src={media.musicUrl} loop preload="none" />}
         {musicOn && !preview && opened && <MusicButton playing={playing} onToggle={toggleMusic} label={d.music} />}

@@ -6,6 +6,7 @@ import {
   DATE_STYLES,
   FRAMES,
   HERO_LAYOUTS,
+  INTRO_STYLES,
   ORNAMENTS,
   PARTICLES,
   PATTERNS,
@@ -113,6 +114,7 @@ export function randomDesign(prev: InvitationStyle): InvitationStyle {
     dateStyle: pick(DATE_STYLES),
     countdownStyle: pick(COUNTDOWN_STYLES),
     cardStyle: pick(CARD_STYLES),
+    envelopeStyle: pick(INTRO_STYLES),
     corners: Math.random() < 0.7,
   };
 }

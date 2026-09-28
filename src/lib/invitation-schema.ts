@@ -57,6 +57,7 @@ export const HERO_LAYOUTS = ["classic", "card", "poster", "split", "monogram"] a
 export const DATE_STYLES = ["ribbon", "calendar", "stacked", "minimal"] as const;
 export const COUNTDOWN_STYLES = ["boxes", "circles", "minimal"] as const;
 export const CARD_STYLES = ["elevated", "outline", "glass", "minimal"] as const;
+export const INTRO_STYLES = ["classic", "royal", "floral", "gate", "curtain"] as const;
 export const SECTION_IDS = ["countdown", "events", "program", "gallery", "notes", "rsvp", "wishes"] as const;
 export const COLOR_KEYS = ["bg", "surface", "text", "muted", "accent", "border", "envelope", "seal"] as const;
 
@@ -156,6 +157,8 @@ export const invitationContentSchema = z.object({
     corners: z.boolean().default(true),
     animation: z.enum(ANIMATIONS).default("fade"),
     envelope: z.boolean().default(true),
+    /** Look of the opening screen (envelope, gate, curtain…); "" inherits from the theme. */
+    envelopeStyle: orInherit(INTRO_STYLES),
     petals: z.boolean().default(true),
     particle: orInherit(PARTICLES),
     heroTone: z.enum(HERO_TONES).default("auto"),

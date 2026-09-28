@@ -19,6 +19,7 @@ export function defaultStyle(themeId: ThemeId = "royal-gold"): InvitationContent
     corners: true,
     animation: "fade",
     envelope: true,
+    envelopeStyle: "",
     petals: true,
     particle: "",
     heroTone: "auto",

@@ -1,4 +1,4 @@
-import type { CARD_STYLES, COUNTDOWN_STYLES, ColorKey, DATE_STYLES, FontId, HERO_LAYOUTS, InvitationStyle, OrnamentId, PatternId, ThemeId } from "./invitation-schema";
+import type { INTRO_STYLES, CARD_STYLES, COUNTDOWN_STYLES, ColorKey, DATE_STYLES, FontId, HERO_LAYOUTS, InvitationStyle, OrnamentId, PatternId, ThemeId } from "./invitation-schema";
 
 export type Ornament = OrnamentId;
 export type Radius = "sharp" | "soft" | "round";
@@ -9,6 +9,7 @@ export type HeroLayout = (typeof HERO_LAYOUTS)[number];
 export type DateStyle = (typeof DATE_STYLES)[number];
 export type CountdownStyle = (typeof COUNTDOWN_STYLES)[number];
 export type CardStyle = (typeof CARD_STYLES)[number];
+export type IntroStyle = (typeof INTRO_STYLES)[number];
 
 export interface Theme {
   id: ThemeId;
@@ -25,6 +26,7 @@ export interface Theme {
   dateStyle: DateStyle;
   countdownStyle: CountdownStyle;
   cardStyle: CardStyle;
+  envelopeStyle: IntroStyle;
   headingFont: FontId;
   bodyFont: FontId;
   dark?: boolean;
@@ -48,6 +50,7 @@ export const THEMES: Record<ThemeId, Theme> = {
     dateStyle: "ribbon",
     countdownStyle: "boxes",
     cardStyle: "elevated",
+    envelopeStyle: "classic",
     headingFont: "aref-ruqaa",
     bodyFont: "amiri",
   }),
@@ -66,6 +69,7 @@ export const THEMES: Record<ThemeId, Theme> = {
     dateStyle: "calendar",
     countdownStyle: "circles",
     cardStyle: "elevated",
+    envelopeStyle: "floral",
     headingFont: "el-messiri",
     bodyFont: "amiri",
   }),
@@ -84,6 +88,7 @@ export const THEMES: Record<ThemeId, Theme> = {
     dateStyle: "ribbon",
     countdownStyle: "circles",
     cardStyle: "glass",
+    envelopeStyle: "royal",
     headingFont: "aref-ruqaa",
     bodyFont: "amiri",
     dark: true,
@@ -103,6 +108,7 @@ export const THEMES: Record<ThemeId, Theme> = {
     dateStyle: "calendar",
     countdownStyle: "minimal",
     cardStyle: "outline",
+    envelopeStyle: "floral",
     headingFont: "reem-kufi",
     bodyFont: "lateef",
   }),
@@ -121,6 +127,7 @@ export const THEMES: Record<ThemeId, Theme> = {
     dateStyle: "stacked",
     countdownStyle: "minimal",
     cardStyle: "outline",
+    envelopeStyle: "classic",
     headingFont: "reem-kufi",
     bodyFont: "tajawal",
   }),
@@ -139,6 +146,7 @@ export const THEMES: Record<ThemeId, Theme> = {
     dateStyle: "stacked",
     countdownStyle: "boxes",
     cardStyle: "elevated",
+    envelopeStyle: "gate",
     headingFont: "el-messiri",
     bodyFont: "amiri",
   }),
@@ -157,6 +165,7 @@ export const THEMES: Record<ThemeId, Theme> = {
     dateStyle: "ribbon",
     countdownStyle: "circles",
     cardStyle: "glass",
+    envelopeStyle: "gate",
     headingFont: "aref-ruqaa",
     bodyFont: "scheherazade",
     dark: true,
@@ -176,6 +185,7 @@ export const THEMES: Record<ThemeId, Theme> = {
     dateStyle: "ribbon",
     countdownStyle: "boxes",
     cardStyle: "elevated",
+    envelopeStyle: "curtain",
     headingFont: "aref-ruqaa",
     bodyFont: "amiri",
     dark: true,
@@ -195,6 +205,7 @@ export const THEMES: Record<ThemeId, Theme> = {
     dateStyle: "calendar",
     countdownStyle: "circles",
     cardStyle: "elevated",
+    envelopeStyle: "floral",
     headingFont: "mirza",
     bodyFont: "lateef",
   }),
@@ -213,6 +224,7 @@ export const THEMES: Record<ThemeId, Theme> = {
     dateStyle: "calendar",
     countdownStyle: "boxes",
     cardStyle: "outline",
+    envelopeStyle: "gate",
     headingFont: "reem-kufi",
     bodyFont: "scheherazade",
   }),
@@ -231,6 +243,7 @@ export const THEMES: Record<ThemeId, Theme> = {
     dateStyle: "stacked",
     countdownStyle: "minimal",
     cardStyle: "minimal",
+    envelopeStyle: "floral",
     headingFont: "el-messiri",
     bodyFont: "tajawal",
   }),
@@ -249,6 +262,7 @@ export const THEMES: Record<ThemeId, Theme> = {
     dateStyle: "stacked",
     countdownStyle: "circles",
     cardStyle: "glass",
+    envelopeStyle: "royal",
     headingFont: "rakkas",
     bodyFont: "amiri",
     dark: true,
@@ -268,6 +282,7 @@ export const THEMES: Record<ThemeId, Theme> = {
     dateStyle: "calendar",
     countdownStyle: "minimal",
     cardStyle: "outline",
+    envelopeStyle: "classic",
     headingFont: "el-messiri",
     bodyFont: "almarai",
   }),
@@ -286,6 +301,7 @@ export const THEMES: Record<ThemeId, Theme> = {
     dateStyle: "ribbon",
     countdownStyle: "circles",
     cardStyle: "elevated",
+    envelopeStyle: "curtain",
     headingFont: "aref-ruqaa",
     bodyFont: "amiri",
   }),
@@ -304,6 +320,7 @@ export const THEMES: Record<ThemeId, Theme> = {
     dateStyle: "stacked",
     countdownStyle: "boxes",
     cardStyle: "elevated",
+    envelopeStyle: "gate",
     headingFont: "changa",
     bodyFont: "scheherazade",
   }),
@@ -321,6 +338,12 @@ export function mix(hex: string, withHex: string, amount: number) {
   const b = hexToRgb(withHex);
   const c = a.map((v, i) => Math.round(v + (b[i] - v) * amount));
   return `#${c.map((v) => v.toString(16).padStart(2, "0")).join("")}`;
+}
+
+/** Perceived brightness 0–255. */
+export function luminance(hex: string) {
+  const [r, g, b] = hexToRgb(hex);
+  return (r * 299 + g * 587 + b * 114) / 1000;
 }
 
 export function isDark(hex: string) {
@@ -341,6 +364,7 @@ export interface ResolvedStyle {
   dateStyle: DateStyle;
   countdownStyle: CountdownStyle;
   cardStyle: CardStyle;
+  envelopeStyle: IntroStyle;
   dark: boolean;
 }
 
@@ -373,6 +397,7 @@ export function resolveStyle(style: Pick<InvitationStyle, "theme" | "accent"> & 
     dateStyle: style.dateStyle || theme.dateStyle,
     countdownStyle: style.countdownStyle || theme.countdownStyle,
     cardStyle: style.cardStyle || theme.cardStyle,
+    envelopeStyle: style.envelopeStyle || theme.envelopeStyle,
     dark,
   };
 }

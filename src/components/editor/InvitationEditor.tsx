@@ -518,7 +518,10 @@ export function InvitationEditor({
       <div className={`${mobileView === "edit" ? "hidden lg:block" : ""}`}>
         <div className="lg:sticky lg:top-4">
           <div className="mx-auto w-full max-w-[420px] rounded-[2.75rem] border-[10px] border-stone-900 bg-stone-900 shadow-2xl">
-            <div className="relative h-[calc(100svh-7rem)] max-h-[860px] min-h-[560px] overflow-y-auto overflow-x-hidden rounded-[2rem] bg-white [scrollbar-width:thin]">
+            <div
+              className="relative h-[calc(100svh-7rem)] max-h-[860px] min-h-[560px] overflow-y-auto overflow-x-hidden rounded-[2rem] bg-white [scrollbar-width:thin]"
+              style={{ "--inv-viewport": "clamp(560px, calc(100svh - 7rem), 860px)" } as React.CSSProperties}
+            >
               <InvitationView content={content} slug={effectiveSlug || "preview"} preview />
             </div>
           </div>

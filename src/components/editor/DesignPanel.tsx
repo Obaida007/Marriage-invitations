@@ -19,6 +19,7 @@ import {
   COUNTDOWN_STYLES,
   DATE_STYLES,
   HERO_LAYOUTS,
+  INTRO_STYLES,
 } from "@/lib/invitation-schema";
 import { THEME_LIST, THEMES, resolveStyle } from "@/lib/themes";
 import { FONTS } from "@/lib/fonts-meta";
@@ -61,6 +62,59 @@ const PATTERN_LABELS: Record<(typeof PATTERNS)[number], string> = {
 const RADIUS_LABELS = { sharp: "حادة", soft: "ناعمة", round: "دائرية" } as const;
 const FRAME_LABELS = { none: "بدون", single: "إطار مفرد", double: "إطار مزدوج" } as const;
 const COVER_LABELS = { arch: "قوس", circle: "دائرة", rounded: "مستطيل ناعم", square: "مربع" } as const;
+const INTRO_META: Record<(typeof INTRO_STYLES)[number], { label: string; hint: string }> = {
+  classic: { label: "ظرف كلاسيكي", hint: "ختم شمع وبطاقة تنزلق" },
+  royal: { label: "ظرف ملكي", hint: "حواف مذهّبة وختم ذهبي" },
+  floral: { label: "ظرف مزهر", hint: "شريطة وباقة ورد" },
+  gate: { label: "بوابة أندلسية", hint: "باب مقوّس يُفتح" },
+  curtain: { label: "ستارة المسرح", hint: "ستائر مخملية تُزاح" },
+};
+
+/** Mini drawing of each opening scene, in the invitation's colors. */
+function IntroThumb({ variant, c }: { variant: (typeof INTRO_STYLES)[number]; c: { bg: string; envelope: string; seal: string; accent: string; surface: string } }) {
+  if (variant === "gate") {
+    return (
+      <span className="relative flex h-20 w-full overflow-hidden rounded-lg" style={{ background: c.envelope, filter: "brightness(.8)" }}>
+        {[0, 1].map((i) => (
+          <span key={i} className="relative flex-1 border-x" style={{ borderColor: c.accent }}>
+            <span className="absolute inset-x-[18%] top-[14%] bottom-[16%] border" style={{ borderColor: c.accent, borderRadius: "999px 999px 3px 3px" }} />
+          </span>
+        ))}
+        <span className="absolute left-1/2 top-1/2 h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-double" style={{ borderColor: c.accent, background: c.envelope }} />
+      </span>
+    );
+  }
+  if (variant === "curtain") {
+    const velvet = `repeating-linear-gradient(90deg, rgba(0,0,0,.35) 0 4px, rgba(255,255,255,.12) 4px 8px), ${c.seal}`;
+    return (
+      <span className="relative flex h-20 w-full overflow-hidden rounded-lg" style={{ background: c.bg }}>
+        <span className="absolute inset-y-0 left-0 w-[46%]" style={{ background: velvet }} />
+        <span className="absolute inset-y-0 right-0 w-[46%]" style={{ background: velvet }} />
+        <span className="absolute inset-x-0 top-0 h-3" style={{ background: velvet, borderBottom: `2px solid ${c.accent}` }} />
+        <span className="absolute left-1/2 top-1/2 h-7 w-10 -translate-x-1/2 -translate-y-1/2 rounded border" style={{ borderColor: c.accent, background: c.surface }} />
+      </span>
+    );
+  }
+  const royal = variant === "royal";
+  return (
+    <span className="relative flex h-20 w-full items-center justify-center overflow-hidden rounded-lg" style={{ background: c.bg }}>
+      <span className="relative h-12 w-[4.5rem] rounded-sm shadow-md" style={{ background: c.envelope, filter: royal ? "brightness(.7)" : undefined, boxShadow: royal ? `inset 0 0 0 2px ${c.accent}` : undefined }}>
+        <span className="absolute inset-x-0 top-0 h-[58%]" style={{ background: royal ? c.envelope : c.envelope, filter: "brightness(.9)", clipPath: "polygon(0 0,100% 0,50% 100%)", boxShadow: "0 1px 0 rgba(0,0,0,.2)" }} />
+        {variant === "floral" ? (
+          <>
+            <span className="absolute inset-y-0 left-[22%] w-1.5" style={{ background: c.accent }} />
+            <span className="absolute left-1/2 top-[48%] -translate-x-1/2 -translate-y-1/2 text-base leading-none" style={{ color: c.seal }}>
+              ✿
+            </span>
+          </>
+        ) : (
+          <span className="absolute left-1/2 top-[58%] h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full shadow" style={{ background: royal ? c.accent : c.seal }} />
+        )}
+      </span>
+    </span>
+  );
+}
+
 const PARTICLE_LABELS = { petals: "بتلات", hearts: "قلوب", stars: "نجوم", sparkles: "لمعان" } as const;
 const HERO_LAYOUT_META: Record<(typeof HERO_LAYOUTS)[number], { label: string; hint: string }> = {
   classic: { label: "كلاسيكي", hint: "في المنتصف مع الزخارف" },
@@ -392,9 +446,34 @@ export function DesignPanel({ content, patch, defaultOpen }: { content: Invitati
         </Field>
       </Panel>
 
+      <Panel title="الافتتاحية (الظرف)" icon="💌" defaultOpen={defaultOpen}>
+        <Toggle label="شاشة افتتاحية متحركة" hint="يفتحها الضيف بلمسة ليرى الدعوة، ومعها تبدأ الموسيقى" checked={style.envelope} onChange={(v) => set("envelope", v)} />
+        {style.envelope && (
+          <>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+              {INTRO_STYLES.map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => set("envelopeStyle", v === rs.theme.envelopeStyle ? "" : v)}
+                  className={`rounded-xl border p-1.5 text-center transition ${rs.envelopeStyle === v ? "border-brand bg-soft/50 ring-2 ring-brand/15" : "border-line bg-white hover:border-stone-300"}`}
+                >
+                  <IntroThumb variant={v} c={rs.colors} />
+                  <span className="mt-1 block text-xs font-bold">{INTRO_META[v].label}</span>
+                  <span className="block text-[10px] leading-tight text-stone-500">{INTRO_META[v].hint}</span>
+                </button>
+              ))}
+            </div>
+            <button type="button" className="btn-ghost w-full" onClick={() => window.dispatchEvent(new Event("dawati:replay-intro"))}>
+              ▶ معاينة الافتتاحية في الجوال
+            </button>
+            <p className="text-xs text-stone-500">الألوان تتبع لون «الظرف» و«ختم الظرف» من قسم الألوان، والنص على الختم من حقل «المونوغرام».</p>
+          </>
+        )}
+      </Panel>
+
       <Panel title="الحركة والمؤثرات" icon="🎬">
         <Segmented label="حركة ظهور الأقسام" options={ANIMATIONS} labels={ANIMATION_LABELS} value={style.animation ?? "fade"} onChange={(v) => set("animation", v)} />
-        <Toggle label="ظرف افتتاحي متحرك" hint="يفتح الضيف الظرف ليرى الدعوة، ويبدأ تشغيل الموسيقى" checked={style.envelope} onChange={(v) => set("envelope", v)} />
         <Toggle label="عناصر متساقطة" checked={style.petals} onChange={(v) => set("petals", v)} />
         {style.petals && <Segmented label="شكل العناصر المتساقطة" options={PARTICLES} labels={PARTICLE_LABELS} value={rs.particle} onChange={(v) => set("particle", v === rs.theme.particle ? "" : v)} />}
       </Panel>
