@@ -1,10 +1,10 @@
 import "server-only";
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { cache } from "react";
 import { InvitationView } from "@/components/invitation/InvitationView";
 import { coupleTitle } from "@/lib/couple";
-import { getGuestByToken, getInvitationBySlug, listWishes } from "@/lib/data";
+import { getGuestByToken, getInvitationBySlug, listWishes, resolveSlugAlias } from "@/lib/data";
 import { formatGregorian, fmtLocale } from "@/lib/dates";
 import { getOrigin } from "@/lib/origin";
 import { getCurrentUser } from "@/lib/auth";
@@ -33,7 +33,12 @@ export async function invitationMetadata(slug: string): Promise<Metadata> {
 
 export async function renderInvitation(slug: string, token: string | undefined) {
   const inv = await load(slug);
-  if (!inv) notFound();
+  if (!inv) {
+    // A renamed invitation: send old (already shared) links to the new address.
+    const renamed = await resolveSlugAlias(slug);
+    if (renamed) permanentRedirect(`/i/${renamed}${token ? `/${encodeURIComponent(token)}` : ""}`);
+    notFound();
+  }
   // Hidden invitations stay visible to their own users and admins.
   if (!inv.published && !(await getInvitationAccess(inv.id, await getCurrentUser()))) notFound();
 

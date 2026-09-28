@@ -163,3 +163,32 @@ export async function ensureCheckinCode(inv: { id: string; checkinCode: string |
   await db.update(invitations).set({ checkinCode: code }).where(eq(invitations.id, inv.id));
   return code;
 }
+
+/** Where an old (renamed) link now points, if anywhere. */
+export async function resolveSlugAlias(slug: string) {
+  const db = await getDb();
+  const alias = await db.query.slugAliases.findFirst({ where: eq(schema.slugAliases.slug, slug.toLowerCase()) });
+  if (!alias) return null;
+  const inv = await db.query.invitations.findFirst({ where: eq(invitations.id, alias.invitationId), columns: { slug: true } });
+  return inv?.slug ?? null;
+}
+
+/**
+ * Whether `slug` can be used by invitation `ownId`: not another invitation's
+ * current link, and not another invitation's old link (which must keep redirecting).
+ */
+export async function isSlugFree(slug: string, ownId?: string) {
+  const db = await getDb();
+  const current = await db.query.invitations.findFirst({ where: eq(invitations.slug, slug), columns: { id: true } });
+  if (current && current.id !== ownId) return false;
+  const alias = await db.query.slugAliases.findFirst({ where: eq(schema.slugAliases.slug, slug) });
+  return !alias || alias.invitationId === ownId;
+}
+
+/** Changes an invitation's link, remembering the old one for redirects. */
+export async function renameSlug(invitationId: string, oldSlug: string, newSlug: string) {
+  const db = await getDb();
+  await db.insert(schema.slugAliases).values({ slug: oldSlug, invitationId }).onConflictDoNothing();
+  // Taking back one of our own old links: it is current again, not an alias.
+  await db.delete(schema.slugAliases).where(and(eq(schema.slugAliases.slug, newSlug), eq(schema.slugAliases.invitationId, invitationId)));
+}

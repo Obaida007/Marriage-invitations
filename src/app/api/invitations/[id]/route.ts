@@ -4,7 +4,7 @@ import { z } from "zod";
 import { getDb, schema } from "@/lib/db";
 import { invitationContentSchema, RESERVED_SLUGS, slugSchema } from "@/lib/invitation-schema";
 import { jsonError, readJson, requireAccess } from "@/lib/api";
-import { getInvitationBySlug } from "@/lib/data";
+import { isSlugFree, renameSlug } from "@/lib/data";
 import { contentRuleViolation, coreFieldViolation } from "@/lib/permissions";
 
 const patchSchema = z.object({
@@ -47,11 +47,11 @@ export async function PATCH(req: NextRequest, ctx: RouteContext<"/api/invitation
 
   if (slug && slug !== inv.slug) {
     if (RESERVED_SLUGS.has(slug)) return jsonError("هذا الرابط محجوز", 409);
-    const existing = await getInvitationBySlug(slug);
-    if (existing && existing.id !== id) return jsonError("هذا الرابط مستخدم مسبقاً", 409);
+    if (!(await isSlugFree(slug, id))) return jsonError("هذا الرابط مستخدم مسبقاً", 409);
   }
 
   const db = await getDb();
+  if (slug && slug !== inv.slug) await renameSlug(id, inv.slug, slug);
   await db
     .update(schema.invitations)
     .set({

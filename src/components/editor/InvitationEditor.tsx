@@ -105,7 +105,10 @@ export function InvitationEditor({
   };
 
   // Suggest a URL from the couple's names until the user edits it.
-  const autoSlug = useMemo(() => suggestSlug(content.couple.groomName, content.couple.brideName), [content.couple.groomName, content.couple.brideName]);
+  const autoSlug = useMemo(
+    () => suggestSlug(content.couple.groomName, content.couple.brideName, content.couple.hideBrideName),
+    [content.couple.groomName, content.couple.brideName, content.couple.hideBrideName],
+  );
   const effectiveSlug = slugTouched ? slug : autoSlug;
 
   useEffect(() => {
@@ -499,6 +502,24 @@ export function InvitationEditor({
             {slugState.checking ? "جارٍ التحقق…" : slugState.available === false ? slugState.reason : slugState.available ? "✓ الرابط متاح" : ""}
             {mode === "create" && slugState.available === false && !slugTouched && " — سنضيف لاحقة تلقائياً"}
           </p>
+          {effectiveSlug !== autoSlug && (
+            <button
+              type="button"
+              className="btn-ghost px-3 py-1.5 text-xs"
+              onClick={() => {
+                setSlugTouched(true);
+                setSlug(autoSlug);
+                setDirty(true);
+              }}
+            >
+              ✨ استخدم رابطاً بالأسماء: <span dir="ltr">{autoSlug}</span>
+            </button>
+          )}
+          {mode === "edit" && effectiveSlug !== initialSlug && (
+            <p className="rounded-xl bg-sky-50 p-3 text-xs text-sky-900">
+              الروابط المرسلة سابقاً (<span dir="ltr">/i/{initialSlug}</span>) ستبقى تعمل وتُحوَّل تلقائياً إلى الرابط الجديد، بما فيها الروابط الشخصية للضيوف.
+            </p>
+          )}
         </Panel>
         )}
 

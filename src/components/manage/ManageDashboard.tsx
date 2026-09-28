@@ -106,7 +106,7 @@ export function ManageDashboard(props: {
         <div className="card mb-6 border-red-200 bg-red-50 p-4 text-sm text-red-900">
           <b>⚠️ روابط الدعوة تستخدم العنوان المحلي ({origin.replace(/^https?:\/\//, "")})</b> — هذا العنوان موجود على جهازك فقط، فلن تفتح الروابط المرسلة عبر واتساب
           على جوالات الضيوف. عند النشر ضع رابط موقعك الحقيقي في <code dir="ltr">NEXT_PUBLIC_APP_URL</code> (مثل <code dir="ltr">https://dawati.com</code>). وللتجربة على
-          جوالك داخل نفس شبكة الواي فاي افتح لوحة التحكم عبر عنوان جهازك في الشبكة (مثل <code dir="ltr">http://192.168.1.5:3000</code>) بدلاً من localhost.
+          جوالك داخل نفس شبكة الواي فاي افتح لوحة التحكم عبر عنوان جهازك في الشبكة (مثل <code dir="ltr">http://192.168.1.5:3000</code>) بدلاً من localhost. وعلى جهازك استخدم <code dir="ltr">http://</code> وليس <code dir="ltr">https://</code>.
         </div>
       )}
       {access.locked && (

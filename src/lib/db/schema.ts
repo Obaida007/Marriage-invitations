@@ -67,6 +67,19 @@ export const wishes = sqliteTable(
   (t) => [index("wishes_invitation_idx").on(t.invitationId)],
 );
 
+/** Previous links of an invitation, kept so already-sent links redirect after a rename. */
+export const slugAliases = sqliteTable(
+  "slug_aliases",
+  {
+    slug: text("slug").primaryKey(),
+    invitationId: text("invitation_id")
+      .notNull()
+      .references(() => invitations.id, { onDelete: "cascade" }),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
+  },
+  (t) => [index("slug_aliases_invitation_idx").on(t.invitationId)],
+);
+
 export const media = sqliteTable("media", {
   id: text("id").primaryKey(),
   mime: text("mime").notNull(),

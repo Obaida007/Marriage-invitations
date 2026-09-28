@@ -5,7 +5,7 @@ import { newId, randomSlugSuffix } from "@/lib/ids";
 import { invitationContentSchema, RESERVED_SLUGS, slugSchema } from "@/lib/invitation-schema";
 import { jsonError, readJson, requireAdmin } from "@/lib/api";
 import { suggestSlug } from "@/lib/slug";
-import { getInvitationBySlug } from "@/lib/data";
+import { isSlugFree } from "@/lib/data";
 import { contentRuleViolation } from "@/lib/permissions";
 
 const createSchema = z.object({
@@ -25,9 +25,9 @@ export async function POST(req: NextRequest) {
   const rule = contentRuleViolation(content);
   if (rule) return jsonError(rule, 422);
 
-  let slug = body.data.slug || suggestSlug(content.couple.groomName, content.couple.brideName);
+  let slug = body.data.slug || suggestSlug(content.couple.groomName, content.couple.brideName, content.couple.hideBrideName);
   if (RESERVED_SLUGS.has(slug)) return jsonError("هذا الرابط محجوز، اختر رابطاً آخر", 409);
-  if (await getInvitationBySlug(slug)) {
+  if (!(await isSlugFree(slug))) {
     if (body.data.slug) return jsonError("هذا الرابط مستخدم مسبقاً، اختر رابطاً آخر", 409);
     slug = `${slug}-${randomSlugSuffix()}`;
   }
