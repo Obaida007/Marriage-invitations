@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { GuestStats } from "@/lib/data";
 import { Spinner } from "@/components/ui/controls";
 import { CopyButton } from "./CopyButton";
+import { arabicPeople, guestLink } from "@/lib/links";
 
 export interface GuestRow {
   id: string;
@@ -29,7 +30,8 @@ const STATUS = {
   declined: { label: "معتذر", cls: "bg-rose-100 text-rose-700" },
 } as const;
 
-const DEFAULT_TEMPLATE = "السلام عليكم {الاسم} 🌸\nيسعدنا ويشرفنا دعوتكم لحضور حفل زفاف {العروسين}\nتفاصيل الدعوة وتأكيد الحضور من الرابط:\n{الرابط}";
+// No emoji by default: some WhatsApp clients mangle emoji passed through wa.me links into "�".
+const DEFAULT_TEMPLATE = "السلام عليكم ورحمة الله {الاسم}\nيسعدنا ويشرفنا دعوتكم لحضور حفل زفاف {العروسين}\nالدعوة لعدد: {العدد}\nتفاصيل الدعوة وتأكيد الحضور من الرابط:\n{الرابط}";
 
 /** Parses "name, phone, companions" per line (comma, tab or Arabic comma separated). */
 function parseBulk(text: string, side: GuestRow["side"], defaultCompanions: number) {
@@ -59,6 +61,7 @@ export function GuestsManager({
   stats,
   readOnly = false,
   maxGuests = null,
+  numerals = "arab",
 }: {
   invitationId: string;
   slug: string;
@@ -69,6 +72,7 @@ export function GuestsManager({
   stats: GuestStats;
   readOnly?: boolean;
   maxGuests?: number | null;
+  numerals?: "arab" | "latn";
 }) {
   const [mode, setMode] = useState<"single" | "bulk">("single");
   const [name, setName] = useState("");
@@ -85,7 +89,8 @@ export function GuestsManager({
   const [showTemplate, setShowTemplate] = useState(false);
   const [editing, setEditing] = useState<GuestRow | null>(null);
 
-  const templateKey = `wa-template:${invitationId}`;
+  // v2: new default adds {العدد} and drops the emoji that WhatsApp could mangle.
+  const templateKey = `wa-template-v2:${invitationId}`;
   useEffect(() => {
     try {
       const saved = localStorage.getItem(templateKey);
@@ -94,8 +99,13 @@ export function GuestsManager({
     } catch {}
   }, [templateKey]);
 
-  const guestUrl = (g: GuestRow) => `${origin}/i/${slug}?g=${g.token}`;
-  const message = (g: GuestRow) => template.replaceAll("{الاسم}", g.name).replaceAll("{العروسين}", title).replaceAll("{الرابط}", guestUrl(g));
+  const guestUrl = (g: GuestRow) => guestLink(origin, slug, g.token);
+  const message = (g: GuestRow) =>
+    template
+      .replaceAll("{الاسم}", g.name)
+      .replaceAll("{العروسين}", title)
+      .replaceAll("{العدد}", arabicPeople(g.maxCompanions + 1, numerals))
+      .replaceAll("{الرابط}", guestUrl(g));
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -227,7 +237,7 @@ export function GuestsManager({
                 }}
               />
               <p className="text-xs text-stone-500">
-                المتغيرات: <code>{"{الاسم}"}</code> <code>{"{العروسين}"}</code> <code>{"{الرابط}"}</code>
+                المتغيرات: <code>{"{الاسم}"}</code> <code>{"{العروسين}"}</code> <code>{"{العدد}"}</code> (عدد المدعوين) <code>{"{الرابط}"}</code>
               </p>
               <button type="button" className="text-xs text-stone-500 underline" onClick={() => setTemplate(DEFAULT_TEMPLATE)}>
                 استعادة النص الافتراضي
@@ -283,6 +293,11 @@ export function GuestsManager({
                       </span>
                       {g.source === "public" && <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[11px] font-bold text-sky-800">من الرابط العام</span>}
                       {g.source === "walkin" && <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[11px] font-bold text-orange-800">سجّل عند الباب</span>}
+                      {g.status === "attending" && g.attendingCount > g.maxCompanions + 1 && (
+                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-800" title="أكّد عدداً أكبر من المدعو">
+                          ⚠️ +{g.attendingCount - (g.maxCompanions + 1)} عن المدعو
+                        </span>
+                      )}
                       {g.checkedInAt && <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-bold text-violet-800">✓ حضر</span>}
                     </div>
                     <div className="mt-1 flex flex-wrap gap-x-3 text-xs text-stone-500">
@@ -391,7 +406,7 @@ function EditGuestDialog({ guest, onClose, onSave }: { guest: GuestRow; onClose:
           {form.status === "attending" && (
             <label>
               <span className="label">عدد الحضور</span>
-              <input type="number" min={1} max={21} className="input" value={form.attendingCount} onChange={(e) => setForm({ ...form, attendingCount: Math.max(1, Math.min(21, Number(e.target.value) || 1)) })} />
+              <input type="number" min={1} max={50} className="input" value={form.attendingCount} onChange={(e) => setForm({ ...form, attendingCount: Math.max(1, Math.min(50, Number(e.target.value) || 1)) })} />
             </label>
           )}
         </div>

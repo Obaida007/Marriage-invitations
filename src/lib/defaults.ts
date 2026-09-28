@@ -41,6 +41,7 @@ function inDays(days: number, time = "20:00") {
 export function defaultContent(): InvitationContent {
   return {
     locale: "ar",
+    numerals: "arab",
     couple: {
       groomName: "محمد",
       brideName: "سارة",

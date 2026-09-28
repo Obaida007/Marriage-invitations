@@ -6,7 +6,7 @@ import { SECTION_IDS, type InvitationContent, type SectionId } from "@/lib/invit
 import { luminance, resolveStyle, styleVars, type CoverShape } from "@/lib/themes";
 import { FONTS } from "@/lib/fonts-meta";
 import { OPENING_TEXT, t } from "@/lib/i18n";
-import { formatGregorian, formatNumber, zonedToDate } from "@/lib/dates";
+import { fmtLocale, formatGregorian, formatNumber, zonedToDate } from "@/lib/dates";
 import { isRsvpClosed } from "@/lib/rsvp";
 import { coupleInitials, coupleTitle } from "@/lib/couple";
 import { Corner, Divider, Icon, Pattern } from "./Ornaments";
@@ -16,6 +16,7 @@ import { DateBlock } from "./DateBlock";
 import { Petals } from "./Petals";
 import { Countdown } from "./Countdown";
 import { Intro } from "./Intro";
+import { guestLink } from "@/lib/links";
 import { MusicButton } from "./MusicButton";
 import { EventCard } from "./EventCard";
 import { RsvpSection, type PublicGuest } from "./RsvpSection";
@@ -38,6 +39,8 @@ export function InvitationView({ content, slug, guest: initialGuest = null, wish
   const offline = preview || demo;
   const { couple, texts, events, program, notes, media, style, features, rsvp, locale } = content;
   const d = t(locale);
+  // Formatting locale for all dates, times and numbers (respects the digits setting).
+  const fmt = fmtLocale(locale, content.numerals);
   const rs = resolveStyle(style);
   const ornament = rs.ornament;
   // Curtains read as velvet in the darker of the envelope/seal colors.
@@ -175,7 +178,7 @@ export function InvitationView({ content, slug, guest: initialGuest = null, wish
       {d.dear} <span className="font-heading text-2xl text-inv-text">{guest.name}</span>
       {guest.maxCompanions > 0 && (
         <span className="mt-1 block font-sans text-sm">
-          ({formatNumber(guest.maxCompanions + 1, locale)} {d.guests})
+          ({formatNumber(guest.maxCompanions + 1, fmt)} {d.guests})
         </span>
       )}
     </p>
@@ -194,7 +197,7 @@ export function InvitationView({ content, slug, guest: initialGuest = null, wish
       <CoupleName person={second} inline={couple.titlesInline} scale={nameScale} />
     </h1>
   );
-  const dateBlock = main && <DateBlock startsAt={main.startsAt} locale={locale} variant={rs.dateStyle} showHijri={features.hijriDate} />;
+  const dateBlock = main && <DateBlock startsAt={main.startsAt} locale={fmt} variant={rs.dateStyle} showHijri={features.hijriDate} />;
   const decorations = (
     <>
       {rs.frame !== "none" && (
@@ -223,7 +226,7 @@ export function InvitationView({ content, slug, guest: initialGuest = null, wish
       <Reveal className={section}>
         <div className="inv-card p-6 text-center">
           <h2 className="mb-5 font-heading text-2xl text-inv-accent">{sectionTitle("countdown", d.countdownTitle)}</h2>
-          <Countdown target={target} locale={locale} d={d} variant={rs.countdownStyle} />
+          <Countdown target={target} locale={fmt} d={d} variant={rs.countdownStyle} />
         </div>
       </Reveal>
     ),
@@ -235,7 +238,7 @@ export function InvitationView({ content, slug, guest: initialGuest = null, wish
             <EventCard
               event={ev}
               timezone={content.timezone}
-              locale={locale}
+              locale={fmt}
               d={d}
               showHijri={features.hijriDate}
               showMap={features.map}
@@ -311,14 +314,14 @@ export function InvitationView({ content, slug, guest: initialGuest = null, wish
               askNote={rsvp.askNote}
               closed={rsvpClosed}
               guestOnly={!rsvp.openRsvp}
-              deadlineLabel={rsvp.deadline ? formatGregorian(`${rsvp.deadline}T00:00`, locale) : undefined}
+              deadlineLabel={rsvp.deadline ? formatGregorian(`${rsvp.deadline}T00:00`, fmt) : undefined}
               preview={offline}
-              locale={locale}
+              locale={fmt}
               d={d}
             />
             {features.qrPass && guest?.status === "attending" && (
               <div className="mt-8">
-                <GuestPass url={`${origin || (typeof window !== "undefined" ? window.location.origin : "")}/i/${slug}?g=${guest.token}`} token={guest.token} name={guest.name} count={guest.attendingCount} locale={locale} d={d} />
+                <GuestPass url={guestLink(origin || (typeof window !== "undefined" ? window.location.origin : ""), slug, guest.token)} token={guest.token} name={guest.name} count={guest.attendingCount} locale={fmt} d={d} />
               </div>
             )}
           </div>

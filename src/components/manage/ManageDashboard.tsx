@@ -102,6 +102,13 @@ export function ManageDashboard(props: {
 
   return (
     <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6">
+      {/^https?:\/\/(localhost|127\.|\[::1\]|0\.0\.0\.0)/.test(origin) && (
+        <div className="card mb-6 border-red-200 bg-red-50 p-4 text-sm text-red-900">
+          <b>⚠️ روابط الدعوة تستخدم العنوان المحلي ({origin.replace(/^https?:\/\//, "")})</b> — هذا العنوان موجود على جهازك فقط، فلن تفتح الروابط المرسلة عبر واتساب
+          على جوالات الضيوف. عند النشر ضع رابط موقعك الحقيقي في <code dir="ltr">NEXT_PUBLIC_APP_URL</code> (مثل <code dir="ltr">https://dawati.com</code>). وللتجربة على
+          جوالك داخل نفس شبكة الواي فاي افتح لوحة التحكم عبر عنوان جهازك في الشبكة (مثل <code dir="ltr">http://192.168.1.5:3000</code>) بدلاً من localhost.
+        </div>
+      )}
       {access.locked && (
         <div className="card mb-6 border-amber-200 bg-amber-50 p-4 text-amber-900">
           <b>🔒 انتهى موعد المناسبة</b> — الدعوة متاحة الآن للعرض فقط: يمكنك مراجعة المدعوين والردود والتهاني وتصدير القائمة، دون تعديل.
@@ -212,7 +219,7 @@ export function ManageDashboard(props: {
         </div>
       )}
 
-      {tab === "guests" && <GuestsManager invitationId={id} slug={slug} title={props.title} origin={origin} guests={guests} setGuests={setGuests} stats={stats} readOnly={!access.canManageGuests} maxGuests={props.maxGuests} />}
+      {tab === "guests" && <GuestsManager invitationId={id} slug={slug} title={props.title} origin={origin} guests={guests} setGuests={setGuests} stats={stats} readOnly={!access.canManageGuests} maxGuests={props.maxGuests} numerals={content.numerals} />}
 
       {tab === "edit" && (
         <InvitationEditor

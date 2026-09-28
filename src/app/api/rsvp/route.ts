@@ -23,7 +23,9 @@ export async function POST(req: NextRequest) {
   const guest = await getGuestByToken(inv.id, input.guestToken);
   const maxCompanions = guest ? guest.maxCompanions : inv.content.rsvp.defaultCompanions;
   const attendingCount =
-    input.status === "attending" ? Math.min(Math.max(input.attendingCount, 1), maxCompanions + 1) : 0;
+    // The invited allowance is a guideline shown to the guest, not a hard cap;
+    // hosts see responses that exceed it flagged in their guest list.
+    input.status === "attending" ? Math.max(input.attendingCount, 1) : 0;
   const now = new Date();
 
   if (guest) {

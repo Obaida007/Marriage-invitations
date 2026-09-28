@@ -6,6 +6,7 @@ import { jsonError, rateLimit, readJson } from "@/lib/api";
 import { getInvitationByCheckinCode, listGuests } from "@/lib/data";
 import { newGuestToken, newId } from "@/lib/ids";
 import { selfCheckinWindow } from "@/lib/permissions";
+import { MAX_PARTY } from "@/lib/invitation-schema";
 import { normalizePhone, samePhone } from "@/lib/phone";
 
 const inputSchema = z.object({
@@ -16,7 +17,7 @@ const inputSchema = z.object({
     .trim()
     .max(30)
     .refine((v) => normalizePhone(v).length >= 7, "اكتب رقم جوال صحيح"),
-  count: z.number().int().min(1).max(21).default(1),
+  count: z.number().int().min(1).max(MAX_PARTY).default(1),
 });
 
 /**
@@ -46,9 +47,8 @@ export async function POST(req: NextRequest) {
     if (match.checkedInAt) {
       return NextResponse.json({ status: "already", name: match.name, checkedInAt: match.checkedInAt });
     }
-    // Keep the confirmed count if they RSVP'd; otherwise use what they entered, within their allowance.
-    const allowed = match.maxCompanions + 1;
-    const attendingCount = match.status === "attending" && match.attendingCount > 0 ? match.attendingCount : Math.min(count, Math.max(allowed, 1));
+    // At the door, record how many actually came.
+    const attendingCount = count;
     await db
       .update(schema.guests)
       .set({ checkedInAt: now, status: "attending", attendingCount, respondedAt: match.respondedAt ?? now, phone: match.phone || phone })

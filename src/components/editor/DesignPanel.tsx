@@ -444,6 +444,15 @@ export function DesignPanel({ content, patch, defaultOpen }: { content: Invitati
             <option value="en">English</option>
           </select>
         </Field>
+        {content.locale === "ar" && (
+          <Segmented
+            label="صيغة الأرقام في الدعوة"
+            options={["arab", "latn"] as const}
+            labels={{ arab: "عربية (١٢٣)", latn: "إنجليزية (123)" }}
+            value={content.numerals ?? "arab"}
+            onChange={(v) => patch((c) => void (c.numerals = v))}
+          />
+        )}
       </Panel>
 
       <Panel title="الافتتاحية (الظرف)" icon="💌" defaultOpen={defaultOpen}>

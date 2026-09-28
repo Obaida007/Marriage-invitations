@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { requireAccess } from "@/lib/api";
 import { listGuests } from "@/lib/data";
+import { guestLink } from "@/lib/links";
 
 const STATUS = { pending: "بانتظار الرد", attending: "سيحضر", declined: "معتذر" } as const;
 const SIDE = { groom: "أهل العريس", bride: "أهل العروس", both: "مشترك" } as const;
@@ -32,7 +33,7 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/invitations/
       g.note,
       g.openedAt ? g.openedAt.toISOString() : "",
       g.checkedInAt ? g.checkedInAt.toISOString() : "",
-      `${origin}/i/${auth.inv.slug}?g=${g.token}`,
+      guestLink(origin, auth.inv.slug, g.token),
     ]
       .map(csvCell)
       .join(","),

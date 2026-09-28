@@ -38,9 +38,19 @@ export function zonedToDate(local: string, timeZone: string): Date {
   return new Date(offset2 === offset ? result : guess - offset2);
 }
 
-const LOCALE_TAG = { ar: "ar-u-nu-arab", en: "en-GB" } as const;
+/** Formatting locale: Arabic with Arabic-Indic digits, Arabic with Western digits, or English. */
+export type FmtLocale = "ar" | "ar-latn" | "en";
 
-export function formatGregorian(local: string, locale: "ar" | "en") {
+const LOCALE_TAG: Record<FmtLocale, string> = { ar: "ar-u-nu-arab", "ar-latn": "ar-u-nu-latn", en: "en-GB" };
+export const localeTag = (locale: FmtLocale) => LOCALE_TAG[locale];
+
+/** Picks the formatting locale from the invitation language and digit preference. */
+export function fmtLocale(locale: FmtLocale, numerals?: "arab" | "latn"): FmtLocale {
+  if (locale === "en") return "en";
+  return numerals === "latn" ? "ar-latn" : "ar";
+}
+
+export function formatGregorian(local: string, locale: FmtLocale) {
   const [d] = local.split("T");
   const [y, m, day] = d.split("-").map(Number);
   const date = new Date(Date.UTC(y, m - 1, day, 12));
@@ -53,11 +63,12 @@ export function formatGregorian(local: string, locale: "ar" | "en") {
   }).format(date);
 }
 
-export function formatHijri(local: string, locale: "ar" | "en") {
+export function formatHijri(local: string, locale: FmtLocale) {
   const [d] = local.split("T");
   const [y, m, day] = d.split("-").map(Number);
   const date = new Date(Date.UTC(y, m - 1, day, 12));
-  const tag = locale === "ar" ? "ar-SA-u-ca-islamic-umalqura-nu-arab" : "en-u-ca-islamic-umalqura";
+  const tag =
+    locale === "en" ? "en-u-ca-islamic-umalqura" : `ar-SA-u-ca-islamic-umalqura-nu-${locale === "ar-latn" ? "latn" : "arab"}`;
   try {
     return new Intl.DateTimeFormat(tag, { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(date);
   } catch {
@@ -65,7 +76,7 @@ export function formatHijri(local: string, locale: "ar" | "en") {
   }
 }
 
-export function formatTime(local: string, locale: "ar" | "en") {
+export function formatTime(local: string, locale: FmtLocale) {
   const [, t = "00:00"] = local.split("T");
   const [hh, mm] = t.split(":").map(Number);
   const date = new Date(Date.UTC(2000, 0, 1, hh, mm));
@@ -76,7 +87,7 @@ export function formatDayNumber(local: string) {
   return local.slice(8, 10);
 }
 
-export function formatNumber(n: number, locale: "ar" | "en") {
+export function formatNumber(n: number, locale: FmtLocale) {
   return new Intl.NumberFormat(LOCALE_TAG[locale]).format(n);
 }
 

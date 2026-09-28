@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import type { Dict } from "@/lib/i18n";
-import { formatNumber } from "@/lib/dates";
+import { formatNumber, type FmtLocale } from "@/lib/dates";
 
 export function GuestPass({
   url,
@@ -17,7 +17,7 @@ export function GuestPass({
   token: string;
   name: string;
   count: number;
-  locale: "ar" | "en";
+  locale: FmtLocale;
   d: Dict;
 }) {
   const [src, setSrc] = useState<string>("");

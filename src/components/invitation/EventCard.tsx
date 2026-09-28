@@ -1,6 +1,6 @@
 import type { InvitationEvent } from "@/lib/invitation-schema";
 import type { Dict } from "@/lib/i18n";
-import { formatGregorian, formatHijri, formatTime, toIcsUtc, zonedToDate } from "@/lib/dates";
+import { formatGregorian, formatHijri, formatTime, toIcsUtc, zonedToDate, type FmtLocale } from "@/lib/dates";
 import { Icon } from "./Ornaments";
 
 export function mapQuery(e: InvitationEvent) {
@@ -41,7 +41,7 @@ export function EventCard({
 }: {
   event: InvitationEvent;
   timezone: string;
-  locale: "ar" | "en";
+  locale: FmtLocale;
   d: Dict;
   showHijri: boolean;
   showMap: boolean;
@@ -110,7 +110,7 @@ export function EventCard({
           className="h-56 w-full border-0 border-t border-inv-border grayscale-[30%]"
           loading="lazy"
           referrerPolicy="no-referrer-when-downgrade"
-          src={`https://maps.google.com/maps?q=${encodeURIComponent(q)}&z=15&hl=${locale}&output=embed`}
+          src={`https://maps.google.com/maps?q=${encodeURIComponent(q)}&z=15&hl=${locale === "en" ? "en" : "ar"}&output=embed`}
         />
       )}
     </div>

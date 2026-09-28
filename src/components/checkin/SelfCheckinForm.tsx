@@ -76,7 +76,7 @@ export function SelfCheckinForm({ code, title }: { code: string; title: string }
             −
           </button>
           <span className="w-6 text-center text-lg font-bold tabular-nums">{count}</span>
-          <button type="button" className="h-9 w-9 rounded-full border border-inv-border text-lg" onClick={() => setCount((c) => Math.min(21, c + 1))} aria-label="+">
+          <button type="button" className="h-9 w-9 rounded-full border border-inv-border text-lg" onClick={() => setCount((c) => Math.min(50, c + 1))} aria-label="+">
             +
           </button>
         </div>

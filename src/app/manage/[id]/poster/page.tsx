@@ -6,7 +6,7 @@ import { requirePageUser } from "@/lib/auth";
 import { ensureCheckinCode, getInvitationAccess } from "@/lib/data";
 import { getOrigin } from "@/lib/origin";
 import { coupleInitials, coupleTitle } from "@/lib/couple";
-import { formatGregorian } from "@/lib/dates";
+import { formatGregorian, fmtLocale } from "@/lib/dates";
 import { resolveStyle } from "@/lib/themes";
 import { FONTS } from "@/lib/fonts-meta";
 import { PrintButton } from "@/components/checkin/PrintButton";
@@ -50,7 +50,7 @@ export default async function PosterPage(props: PageProps<"/manage/[id]/poster">
         <h1 className="mt-[2mm] text-[15mm] leading-tight" style={{ color: rs.colors.accent, fontFamily: FONTS[c.style.headingFont]?.cssVar }}>
           {coupleTitle(c.couple, "ar")}
         </h1>
-        {main && <p className="mt-[3mm] text-[5mm]">{formatGregorian(main.startsAt, "ar")}</p>}
+        {main && <p className="mt-[3mm] text-[5mm]">{formatGregorian(main.startsAt, fmtLocale(c.locale, c.numerals))}</p>}
         <div className="mt-[10mm] w-[95mm] rounded-[4mm] bg-white p-[4mm] shadow-lg" dangerouslySetInnerHTML={{ __html: svg }} />
         <p className="mt-[8mm] text-[8mm] font-bold" style={{ color: rs.colors.accent, fontFamily: "var(--f-cairo)" }}>
           امسح الرمز لتسجيل حضورك

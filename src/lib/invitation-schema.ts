@@ -59,6 +59,8 @@ export const COUNTDOWN_STYLES = ["boxes", "circles", "minimal"] as const;
 export const CARD_STYLES = ["elevated", "outline", "glass", "minimal"] as const;
 export const INTRO_STYLES = ["classic", "royal", "floral", "gate", "curtain"] as const;
 export const SECTION_IDS = ["countdown", "events", "program", "gallery", "notes", "rsvp", "wishes"] as const;
+/** Sanity cap on how many people one response can bring. */
+export const MAX_PARTY = 50;
 export const COLOR_KEYS = ["bg", "surface", "text", "muted", "accent", "border", "envelope", "seal"] as const;
 
 const hex = z
@@ -97,6 +99,8 @@ export const programItemSchema = z.object({
 
 export const invitationContentSchema = z.object({
   locale: z.enum(["ar", "en"]).default("ar"),
+  /** Digits for Arabic invitations: Arabic-Indic (١٢٣) or Western (123). */
+  numerals: z.enum(["arab", "latn"]).default("arab"),
 
   couple: z.object({
     groomName: str(60).min(1, "اسم العريس مطلوب"),
@@ -234,7 +238,8 @@ export const rsvpInputSchema = z.object({
   name: str(80).min(2, "الاسم مطلوب"),
   phone: str(30).optional().default(""),
   status: z.enum(["attending", "declined"]),
-  attendingCount: z.number().int().min(0).max(21),
+  /** Open count (the invited allowance is a guideline, shown to the guest). */
+  attendingCount: z.number().int().min(0).max(MAX_PARTY),
   note: str(300).optional().default(""),
 });
 
@@ -254,6 +259,6 @@ export const guestInputSchema = z.object({
 
 export const guestPatchSchema = guestInputSchema.partial().extend({
   status: z.enum(["pending", "attending", "declined"]).optional(),
-  attendingCount: z.number().int().min(0).max(21).optional(),
+  attendingCount: z.number().int().min(0).max(MAX_PARTY).optional(),
   checkedIn: z.boolean().optional(),
 });

@@ -4,19 +4,18 @@ import { z } from "zod";
 import { getDb, schema } from "@/lib/db";
 import { jsonError, readJson, requireAccess } from "@/lib/api";
 import { getGuestByToken } from "@/lib/data";
+import { tokenFromInput } from "@/lib/links";
 
 /** Looks up a guest by their pass code and marks them as checked in. */
 export async function POST(req: NextRequest, ctx: RouteContext<"/api/invitations/[id]/checkin">) {
   const { id } = await ctx.params;
   const auth = await requireAccess(id, "checkin");
   if (!auth.ok) return auth.response;
-  const body = await readJson(req, z.object({ token: z.string().trim().min(4).max(64) }));
+  const body = await readJson(req, z.object({ token: z.string().trim().min(4).max(400) }));
   if (!body.ok) return body.response;
 
-  // Accept either a raw token or a full invitation URL containing ?g=TOKEN.
-  let token = body.data.token;
-  const match = token.match(/[?&]g=([A-Za-z0-9]+)/);
-  if (match) token = match[1];
+  // Accept a raw code or a scanned personal link (/i/<slug>/<code> or legacy ?g=<code>).
+  const token = tokenFromInput(body.data.token);
 
   const guest = await getGuestByToken(id, token);
   if (!guest) return jsonError("رمز الدخول غير صحيح", 404);

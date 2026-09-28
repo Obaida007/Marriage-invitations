@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { formatNumber } from "@/lib/dates";
+import { formatNumber, type FmtLocale } from "@/lib/dates";
 import type { Dict } from "@/lib/i18n";
 import type { CountdownStyle } from "@/lib/themes";
 
-export function Countdown({ target, locale, d, variant = "boxes" }: { target: number; locale: "ar" | "en"; d: Dict; variant?: CountdownStyle }) {
+export function Countdown({ target, locale, d, variant = "boxes" }: { target: number; locale: FmtLocale; d: Dict; variant?: CountdownStyle }) {
   const [now, setNow] = useState<number | null>(null);
 
   useEffect(() => {
@@ -62,7 +62,7 @@ export function Countdown({ target, locale, d, variant = "boxes" }: { target: nu
   if (variant === "minimal") {
     return (
       <div className="flex items-start justify-center gap-2 sm:gap-4" role="timer" aria-live="off" dir="ltr">
-        {(locale === "ar" ? [...parts].reverse() : parts).map((p, i) => (
+        {(locale !== "en" ? [...parts].reverse() : parts).map((p, i) => (
           <div key={p.l} className="flex items-start gap-2 sm:gap-4">
             {i > 0 && <span className="font-heading text-4xl leading-none text-inv-accent/50 sm:text-5xl">:</span>}
             <div className="text-center">

@@ -6,7 +6,7 @@ import { getInvitationBySlug } from "@/lib/data";
 import { getDb, schema } from "@/lib/db";
 import { resolveStyle } from "@/lib/themes";
 import { shapeArabic } from "@/lib/arabic-shaping";
-import { formatGregorian } from "@/lib/dates";
+import { formatGregorian, fmtLocale } from "@/lib/dates";
 
 export const alt = "دعوة زفاف";
 export const size = { width: 1200, height: 630 };
@@ -121,7 +121,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
                   padding: "6px 28px",
                 }}
               >
-                {s(formatGregorian(main.startsAt, c.locale))}
+                {s(formatGregorian(main.startsAt, fmtLocale(c.locale, c.numerals)))}
               </div>
             )}
           </div>

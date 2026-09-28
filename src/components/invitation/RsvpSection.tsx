@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import type { Dict } from "@/lib/i18n";
-import { formatNumber } from "@/lib/dates";
+import { MAX_PARTY } from "@/lib/invitation-schema";
+import { formatNumber, type FmtLocale } from "@/lib/dates";
 import { Icon } from "./Ornaments";
 
 export interface PublicGuest {
@@ -35,7 +36,7 @@ export function RsvpSection({
   guestOnly: boolean;
   deadlineLabel?: string;
   preview?: boolean;
-  locale: "ar" | "en";
+  locale: FmtLocale;
   d: Dict;
 }) {
   const responded = guest && guest.status !== "pending";
@@ -47,7 +48,9 @@ export function RsvpSection({
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const max = (guest?.maxCompanions ?? maxCompanions) + 1;
+  // How many the hosts invited; the guest may enter more, with a gentle reminder.
+  const invited = (guest?.maxCompanions ?? maxCompanions) + 1;
+  const max = MAX_PARTY;
 
   if (closed && !responded) return <p className="text-center font-sans text-inv-muted">{d.rsvpClosed}</p>;
   if (guestOnly && !guest) return <p className="text-center font-sans text-inv-muted">{d.rsvpGuestOnly}</p>;
@@ -125,14 +128,15 @@ export function RsvpSection({
         <input className="inv-input" placeholder={d.yourName} value={name} onChange={(e) => setName(e.target.value)} required minLength={2} maxLength={80} autoComplete="name" />
       )}
       {!guest && (
-        <input className="inv-input" placeholder={d.phone} value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" autoComplete="tel" maxLength={30} dir="ltr" style={{ textAlign: locale === "ar" ? "right" : "left" }} />
+        <input className="inv-input" placeholder={d.phone} value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" autoComplete="tel" maxLength={30} dir="ltr" style={{ textAlign: locale === "en" ? "left" : "right" }} />
       )}
-      {status === "attending" && max > 1 && (
-        <div className="flex items-center justify-between gap-3 rounded-[var(--inv-radius-sm)] border border-inv-border bg-inv-bg px-4 py-2.5">
+      {status === "attending" && (
+        <div className="space-y-2 rounded-[var(--inv-radius-sm)] border border-inv-border bg-inv-bg px-4 py-2.5">
+        <div className="flex items-center justify-between gap-3">
           <span className="text-sm">
             {d.companions}
             <span className="block text-xs text-inv-muted">
-              {d.maxAllowed}: {formatNumber(max, locale)}
+              {d.invitedCount}: {formatNumber(invited, locale)}
             </span>
           </span>
           <div className="flex items-center gap-3">
@@ -144,6 +148,11 @@ export function RsvpSection({
               +
             </button>
           </div>
+        </div>
+          <p className={`text-xs ${count > invited ? "font-bold text-amber-700" : "text-inv-muted"}`}>
+            {count > invited ? "⚠️ " : "ℹ️ "}
+            {d.respectCount}
+          </p>
         </div>
       )}
       {askNote && <textarea className="inv-input min-h-20" placeholder={d.noteLabel} value={note} onChange={(e) => setNote(e.target.value)} maxLength={300} />}

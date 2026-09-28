@@ -1,7 +1,6 @@
 import type { DateStyle } from "@/lib/themes";
-import { formatDayNumber, formatGregorian, formatHijri, formatNumber, formatTime } from "@/lib/dates";
+import { formatDayNumber, formatGregorian, formatHijri, formatNumber, formatTime, type FmtLocale, localeTag } from "@/lib/dates";
 
-const TAG = { ar: "ar-u-nu-arab", en: "en-GB" } as const;
 
 function parts(local: string) {
   const [y, m, d] = local.slice(0, 10).split("-").map(Number);
@@ -9,9 +8,9 @@ function parts(local: string) {
 }
 
 /** The main event date in the hero, in one of several visual styles. */
-export function DateBlock({ startsAt, locale, variant, showHijri }: { startsAt: string; locale: "ar" | "en"; variant: DateStyle; showHijri: boolean }) {
+export function DateBlock({ startsAt, locale, variant, showHijri }: { startsAt: string; locale: FmtLocale; variant: DateStyle; showHijri: boolean }) {
   const { y, m, d, date } = parts(startsAt);
-  const fmt = (o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat(TAG[locale], { ...o, timeZone: "UTC" }).format(date);
+  const fmt = (o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat(localeTag(locale), { ...o, timeZone: "UTC" }).format(date);
   const hijri = showHijri ? formatHijri(startsAt, locale) : "";
   const hijriLine = hijri && <p className="mt-3 font-sans text-sm text-inv-muted">{hijri}</p>;
 
@@ -21,13 +20,13 @@ export function DateBlock({ startsAt, locale, variant, showHijri }: { startsAt: 
     const lead = first.getUTCDay(); // Sunday-first grid
     // 2023-01-01 was a Sunday. "narrow" gives the standard one-letter labels (ح ن ث ر خ ج س).
     const weekdays = Array.from({ length: 7 }, (_, i) =>
-      new Intl.DateTimeFormat(TAG[locale], { weekday: "narrow", timeZone: "UTC" }).format(new Date(Date.UTC(2023, 0, 1 + i))),
+      new Intl.DateTimeFormat(localeTag(locale), { weekday: "narrow", timeZone: "UTC" }).format(new Date(Date.UTC(2023, 0, 1 + i))),
     );
     const cells = [...Array(lead).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => i + 1)];
     return (
       <div className="mx-auto mt-10 w-full max-w-xs">
         <p className="font-heading text-2xl text-inv-accent">{fmt({ month: "long", year: "numeric" })}</p>
-        <div className="mt-3 grid grid-cols-7 gap-y-1.5 font-sans text-sm" dir={locale === "ar" ? "rtl" : "ltr"}>
+        <div className="mt-3 grid grid-cols-7 gap-y-1.5 font-sans text-sm" dir={locale === "en" ? "ltr" : "rtl"}>
           {weekdays.map((w, i) => (
             <span key={`w${i}`} className="pb-1 text-[11px] text-inv-muted">
               {w}
