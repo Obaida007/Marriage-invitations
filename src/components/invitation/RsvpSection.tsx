@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import type { Dict } from "@/lib/i18n";
-import { MAX_PARTY } from "@/lib/invitation-schema";
 import { formatNumber, type FmtLocale } from "@/lib/dates";
 import { Icon } from "./Ornaments";
 
@@ -18,7 +17,6 @@ export function RsvpSection({
   slug,
   guest,
   onGuest,
-  maxCompanions,
   askNote,
   closed,
   guestOnly,
@@ -30,7 +28,6 @@ export function RsvpSection({
   slug: string;
   guest: PublicGuest | null;
   onGuest: (g: PublicGuest) => void;
-  maxCompanions: number;
   askNote: boolean;
   closed: boolean;
   guestOnly: boolean;
@@ -44,13 +41,14 @@ export function RsvpSection({
   const [name, setName] = useState(guest?.name ?? "");
   const [phone, setPhone] = useState("");
   const [status, setStatus] = useState<"attending" | "declined">(guest?.status === "declined" ? "declined" : "attending");
-  const [count, setCount] = useState(Math.max(1, guest?.attendingCount || 1));
+  const [count, setCount] = useState(Math.min(Math.max(1, guest?.attendingCount || 1), guest ? guest.maxCompanions + 1 : 1));
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  // How many the hosts invited; the guest may enter more, with a gentle reminder.
-  const invited = (guest?.maxCompanions ?? maxCompanions) + 1;
-  const max = MAX_PARTY;
+  // The allowance comes from the guest's personal code (known to the server, so it
+  // can't be edited in the URL). The general link has no code: one person, no picker.
+  const invited = guest ? guest.maxCompanions + 1 : 1;
+  const showCount = !!guest && invited > 1;
 
   if (closed && !responded) return <p className="text-center font-sans text-inv-muted">{d.rsvpClosed}</p>;
   if (guestOnly && !guest) return <p className="text-center font-sans text-inv-muted">{d.rsvpGuestOnly}</p>;
@@ -80,7 +78,7 @@ export function RsvpSection({
     e.preventDefault();
     if (preview) {
       // Demo/preview: simulate a response locally.
-      onGuest({ token: "DEMO2026", name: name || guest?.name || "ضيف", status, attendingCount: status === "attending" ? count : 0, maxCompanions: max - 1 });
+      onGuest({ token: "DEMO2026", name: name || guest?.name || "ضيف", status, attendingCount: status === "attending" ? Math.min(count, invited) : 0, maxCompanions: invited - 1 });
       setEditing(false);
       return;
     }
@@ -90,7 +88,7 @@ export function RsvpSection({
       const res = await fetch("/api/rsvp", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ slug, guestToken: guest?.token, name: name || guest?.name, phone, status, attendingCount: status === "attending" ? count : 0, note }),
+        body: JSON.stringify({ slug, guestToken: guest?.token, name: name || guest?.name, phone, status, attendingCount: status === "attending" ? Math.min(count, invited) : 0, note }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
@@ -130,13 +128,12 @@ export function RsvpSection({
       {!guest && (
         <input className="inv-input" placeholder={d.phone} value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" autoComplete="tel" maxLength={30} dir="ltr" style={{ textAlign: locale === "en" ? "left" : "right" }} />
       )}
-      {status === "attending" && (
-        <div className="space-y-2 rounded-[var(--inv-radius-sm)] border border-inv-border bg-inv-bg px-4 py-2.5">
-        <div className="flex items-center justify-between gap-3">
+      {status === "attending" && showCount && (
+        <div className="flex items-center justify-between gap-3 rounded-[var(--inv-radius-sm)] border border-inv-border bg-inv-bg px-4 py-2.5">
           <span className="text-sm">
             {d.companions}
             <span className="block text-xs text-inv-muted">
-              {d.invitedCount}: {formatNumber(invited, locale)}
+              {d.maxAllowed}: {formatNumber(invited, locale)}
             </span>
           </span>
           <div className="flex items-center gap-3">
@@ -144,15 +141,16 @@ export function RsvpSection({
               −
             </button>
             <span className="w-6 text-center text-lg font-bold tabular-nums">{formatNumber(count, locale)}</span>
-            <button type="button" className="h-9 w-9 rounded-full border border-inv-border text-lg" onClick={() => setCount((c) => Math.min(max, c + 1))} aria-label="+">
+            <button
+              type="button"
+              className="h-9 w-9 rounded-full border border-inv-border text-lg disabled:opacity-30"
+              onClick={() => setCount((c) => Math.min(invited, c + 1))}
+              disabled={count >= invited}
+              aria-label="+"
+            >
               +
             </button>
           </div>
-        </div>
-          <p className={`text-xs ${count > invited ? "font-bold text-amber-700" : "text-inv-muted"}`}>
-            {count > invited ? "⚠️ " : "ℹ️ "}
-            {d.respectCount}
-          </p>
         </div>
       )}
       {askNote && <textarea className="inv-input min-h-20" placeholder={d.noteLabel} value={note} onChange={(e) => setNote(e.target.value)} maxLength={300} />}

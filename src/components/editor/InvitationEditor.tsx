@@ -438,16 +438,9 @@ export function InvitationEditor({
                 <Field label="آخر موعد للتأكيد" hint="اتركه فارغاً ليُغلق عند بدء الحفل">
                   <input type="date" className="input" value={rsvp.deadline} onChange={(e) => patch((c) => void (c.rsvp.deadline = e.target.value))} />
                 </Field>
-                <Field label="عدد المرافقين المسموح (للرابط العام)">
-                  <input
-                    type="number"
-                    min={0}
-                    max={20}
-                    className="input"
-                    value={rsvp.defaultCompanions}
-                    onChange={(e) => patch((c) => void (c.rsvp.defaultCompanions = Math.max(0, Math.min(20, Number(e.target.value) || 0))))}
-                  />
-                </Field>
+                <p className="self-end rounded-xl bg-white/70 p-3 text-xs text-stone-600">
+                  عدد الحضور يُحدَّد لكل ضيف في قائمة الضيوف (المرافقون)، ويظهر له في رابطه الشخصي كحد أقصى. من يرد عبر الرابط العام يُحسب شخصاً واحداً.
+                </p>
               </div>
             </div>
           )}

@@ -310,7 +310,6 @@ export function InvitationView({ content, slug, guest: initialGuest = null, wish
               slug={slug}
               guest={guest}
               onGuest={handleGuest}
-              maxCompanions={rsvp.defaultCompanions}
               askNote={rsvp.askNote}
               closed={rsvpClosed}
               guestOnly={!rsvp.openRsvp}

@@ -257,7 +257,16 @@ export const guestInputSchema = z.object({
   maxCompanions: z.number().int().min(0).max(20).default(0),
 });
 
-export const guestPatchSchema = guestInputSchema.partial().extend({
+/**
+ * Partial update: every field optional and WITHOUT defaults — `.partial()` on
+ * the create schema would keep its defaults and silently reset omitted fields
+ * (e.g. companions back to 0) on every partial update.
+ */
+export const guestPatchSchema = z.object({
+  name: str(80).min(1, "الاسم مطلوب").optional(),
+  phone: str(30).optional(),
+  side: z.enum(["groom", "bride", "both"]).optional(),
+  maxCompanions: z.number().int().min(0).max(20).optional(),
   status: z.enum(["pending", "attending", "declined"]).optional(),
   attendingCount: z.number().int().min(0).max(MAX_PARTY).optional(),
   checkedIn: z.boolean().optional(),
